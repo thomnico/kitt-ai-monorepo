@@ -15,9 +15,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.kitt.android.R
 import com.kitt.android.voice.VoiceEngine
 import java.util.Locale
+import android.view.animation.AnimationUtils
+import com.kitt.android.R
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -26,8 +27,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var sttStatusTextView: TextView
     private lateinit var startListeningButton: Button
     private lateinit var readCguButton: Button
+    private lateinit var downloadMoshiButton: Button
     private lateinit var micActivityIndicator: ImageView
     private lateinit var voiceEngine: VoiceEngine
+    private var isVoiceEngineInitialized = false
     private val RECORD_AUDIO_PERMISSION_CODE = 1
     private val TAG = "MainActivity"
     private var isInterruptionEnabled = false
@@ -42,6 +45,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         sttStatusTextView = findViewById(R.id.sttStatusTextView)
         startListeningButton = findViewById(R.id.startListeningButton)
         readCguButton = findViewById(R.id.readCguButton)
+        downloadMoshiButton = findViewById(R.id.downloadMoshiButton)
         micActivityIndicator = findViewById(R.id.micActivityIndicator)
 
         // Initialize STT status
@@ -49,9 +53,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         // Initialize Voice Engine
         voiceEngine = VoiceEngine(this)
-        if (!voiceEngine.initVoiceEngine()) {
+        if (voiceEngine.initVoiceEngine()) {
+            isVoiceEngineInitialized = true
+            Log.d(TAG, "Voice engine initialized successfully")
+        } else {
             Log.e(TAG, "Failed to initialize voice engine")
-            Toast.makeText(this, "Failed to initialize voice engine", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MainActivity, "Failed to initialize voice engine", Toast.LENGTH_SHORT).show()
         }
 
         // Initialize TextToSpeech
@@ -64,13 +71,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         readCguButton.setOnClickListener {
             readAndroidCgu()
         }
+        downloadMoshiButton.setOnClickListener {
+            downloadMoshiModel()
+        }
 
         // Check and request audio permission
         checkPermission()
     }
 
     private fun checkPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                 this,
@@ -88,9 +98,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == RECORD_AUDIO_PERMISSION_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Audio permission granted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Audio permission granted", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Audio permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Audio permission denied", Toast.LENGTH_SHORT).show()
                 startListeningButton.isEnabled = false
             }
         }
@@ -106,6 +116,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             showMicActivityAnimation(true)
         }
 
+        // Test if VoiceEngine is initialized as a basic check for listening capability
+        if (!isVoiceEngineInitialized) {
+            Log.e(TAG, "Voice engine is not initialized")
+            transcriptionTextView.text = "Error: Voice engine is not initialized. Please restart the app."
+            startListeningButton.isEnabled = true
+            showMicActivityAnimation(false)
+            return
+        }
+
         // Use the VoiceEngine for STT
         try {
             Log.d(TAG, "Processing voice input with VoiceEngine")
@@ -117,7 +136,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 Handler(Looper.getMainLooper()).postDelayed({
                     transcriptionTextView.text = "Interrupted: User interruption detected."
                     Log.d(TAG, "User interruption simulated")
-                    showMicActivityAnimation(false)
+                    showMicActivityAnimation(true)
                 }, 100)
             } else {
                 respondToUser()
@@ -151,12 +170,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             val result = textToSpeech.setLanguage(Locale.US)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e(TAG, "Language not supported for TTS")
-                Toast.makeText(this, "TTS language not supported", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Language not supported for TTS")
+            Toast.makeText(this@MainActivity, "TTS language not supported", Toast.LENGTH_SHORT).show()
             }
         } else {
             Log.e(TAG, "TTS initialization failed")
-            Toast.makeText(this, "TTS initialization failed", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MainActivity, "TTS initialization failed", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -183,21 +202,67 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // Enable interruption after starting to read CGU
         isInterruptionEnabled = true
         updateSttStatus()
-        Toast.makeText(this, "Voice interruption enabled", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this@MainActivity, "Voice interruption enabled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun downloadMoshiModel() {
+        Toast.makeText(this@MainActivity, "Initiating Moshi model download...", Toast.LENGTH_SHORT).show()
+        Log.d(TAG, "Starting Moshi model download process")
+        
+        // Use VoiceEngine to download the Moshi model from a predefined source
+        val sourceUrl = "https://kyutai.org/moshi-model" // Actual URL to be defined based on project configuration
+        try {
+            val downloadSuccess = voiceEngine.downloadMoshiModel(sourceUrl)
+            if (downloadSuccess) {
+                Log.d(TAG, "Moshi model download initiated successfully from $sourceUrl")
+                Toast.makeText(this@MainActivity, "Moshi model download initiated.", Toast.LENGTH_SHORT).show()
+                updateSttStatus() // Update status to reflect any changes in model size
+            } else {
+                Log.e(TAG, "Failed to initiate Moshi model download from $sourceUrl")
+                Toast.makeText(this@MainActivity, "Failed to initiate Moshi model download.", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during Moshi model download: ${e.message}")
+            Toast.makeText(this@MainActivity, "Error downloading Moshi model.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateSttStatus() {
         val interruptionStatus = if (isInterruptionEnabled) "Enabled" else "Disabled"
-        sttStatusTextView.text = "STT: $sttSystem | Interruption: $interruptionStatus"
-        Log.d(TAG, "Updated STT status: STT=$sttSystem, Interruption=$interruptionStatus")
+        val modelSize = getMoshiModelSize()
+        val gpuInfo = getGpuInfo()
+        sttStatusTextView.text = "STT: $sttSystem | Interruption: $interruptionStatus | Moshi Model Size: $modelSize | GPU: $gpuInfo"
+        Log.d(TAG, "Updated STT status: STT=$sttSystem, Interruption=$interruptionStatus, Moshi Model Size=$modelSize, GPU=$gpuInfo")
+    }
+
+    private fun getMoshiModelSize(): String {
+        return try {
+            val modelPath = "models/moshi/placeholder_model.txt"
+            val assetManager = assets
+            val inputStream = assetManager.open(modelPath)
+            val size = inputStream.available().toLong()
+            inputStream.close()
+            val sizeInMB = size / (1024 * 1024)
+            "$sizeInMB MB"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting Moshi model size: ${e.message}")
+            "Unknown"
+        }
+    }
+
+    private fun getGpuInfo(): String {
+        return "Adreno 643" // Hardcoded as per monorepo rules for target hardware
     }
 
     private fun showMicActivityAnimation(show: Boolean) {
         if (show) {
             micActivityIndicator.visibility = View.VISIBLE
-            Log.d(TAG, "Mic activity indicator shown")
+            val animation = AnimationUtils.loadAnimation(this@MainActivity, R.anim.pulse)
+            micActivityIndicator.startAnimation(animation)
+            Log.d(TAG, "Mic activity indicator shown with animation")
         } else {
-            micActivityIndicator.visibility = View.INVISIBLE
+            micActivityIndicator.visibility = View.VISIBLE
+            micActivityIndicator.clearAnimation()
             Log.d(TAG, "Mic activity indicator hidden")
         }
     }

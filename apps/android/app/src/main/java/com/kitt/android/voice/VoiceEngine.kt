@@ -128,4 +128,41 @@ class VoiceEngine(private val context: Context) {
         // Simulate processing with Moshi; in a real implementation, this would call native methods
         return "Processed voice input with Moshi: ${input.size} bytes"
     }
+
+    /**
+     * Download the Moshi model from a specified source to local storage for offline use.
+     * @param sourceUrl The URL or source from which to download the model. If empty, uses the default URL.
+     * @return Boolean indicating if the download was successful.
+     */
+    fun downloadMoshiModel(sourceUrl: String = ""): Boolean {
+        val downloadUrl = if (sourceUrl.isEmpty()) "https://huggingface.co/kyutai/stt-1b-en_fr" else sourceUrl
+        Log.d(TAG, "Initiating download of Moshi model from $downloadUrl")
+        try {
+            // Ensure model directory exists
+            val modelDir = File(modelPath)
+            if (!modelDir.exists()) {
+                modelDir.mkdirs()
+                Log.d(TAG, "Created model directory: $modelPath")
+            }
+
+            // Use Android's DownloadManager for downloading the model
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+            val uri = android.net.Uri.parse(downloadUrl)
+            val request = android.app.DownloadManager.Request(uri)
+            request.setTitle("Kyutai Moshi Model")
+            request.setDescription("Downloading voice model for offline use")
+            request.setDestinationInExternalFilesDir(context, null, "models/moshi/moshi_model.bin")
+            request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            val downloadId = downloadManager.enqueue(request)
+            Log.d(TAG, "Download started with ID: $downloadId for Moshi model to $modelPath")
+
+            // Monitor download completion (this is a simplified approach; in a real app, use a BroadcastReceiver)
+            Log.d(TAG, "Monitoring download completion for ID: $downloadId")
+            // Note: Actual monitoring and completion check would be implemented with a BroadcastReceiver
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to download Moshi model: ${e.message}")
+            return false
+        }
+    }
 }

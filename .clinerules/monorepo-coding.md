@@ -53,6 +53,6 @@ In **all** projects, every decision must be in line with the monorepo PRD.md and
 
 If PRD status is draft, suggest enhancement to the PRD based on the context and you can modify the PRD with permission.
 
-If PRD status is dev, don't modify the PRD, folllow instruction first and PRD second especially if need to mock data or validate an hypothesis with temporary code.
+If PRD status is dev, don't modify the PRD, folllow instruction first and PRD second especially if need to mock data or validate an hypothesis with temporary code. If explicitly asked in the prompt to not mock follow that instruction. Ask the user if unsure. 
 
 If PRD status is prod, follow strictly this PRD, no modfication. Ask questions to clarify when there is uncertainty in what to do next.

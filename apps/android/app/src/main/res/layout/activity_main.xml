@@ -46,13 +46,14 @@
 
     <ImageView
         android:id="@+id/micActivityIndicator"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:src="@android:drawable/ic_lock_silent_mode_off"
         android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/startListeningButton"
-        app:layout_constraintEnd_toStartOf="@+id/startListeningButton"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/readCguButton"
@@ -60,6 +61,16 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="Read CGU for Interruption"
+        app:layout_constraintBottom_toTopOf="@+id/downloadMoshiButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/downloadMoshiButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Download Moshi Model"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

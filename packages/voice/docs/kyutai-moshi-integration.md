@@ -37,6 +37,7 @@ In compliance with the monorepo rules, no references to copyrighted intellectual
 - Ensure that the model files are correctly placed in the specified paths for each platform.
 - Monitor performance logs to address any latency issues exceeding the 200ms target.
 - All features must remain functional in offline mode, adhering to the offline-first foundation of the KITT Framework.
+- **Model Download:** If the Moshi model files are not already included or specified, they can be downloaded from the official Hugging Face repository at [https://huggingface.co/kyutai/stt-1b-en_fr](https://huggingface.co/kyutai/stt-1b-en_fr).
 
 ## Contact
 
