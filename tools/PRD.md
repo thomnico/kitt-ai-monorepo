@@ -67,7 +67,7 @@ reliability through offline-first architecture.
 
 ### 3.1 Monorepo Structure
 
-```
+```plaintext
 kitt-framework/
 ├── apps/
 │   ├── android-native/     # Android Kotlin app

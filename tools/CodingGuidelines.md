@@ -65,6 +65,7 @@ The KITT Framework monorepo hosts a complex, cross-platform conversational AI sy
 ## 9. Example Workflow
 
 A typical change to the `data-sync` package might follow this process:
+
 1. Create a short-lived branch off `main` named `feature/sync-conflict-resolution`.
 2. Update the sync logic in `/packages/data-sync/`.
 3. If necessary, update consuming apps in `/apps/android-native/` and `/apps/ios-native/` in the same commit.
