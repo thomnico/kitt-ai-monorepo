@@ -1,8 +1,8 @@
-# Kyutai Moshi Integration in KITT Framework Voice Engine
+# sherpa-onnx Integration in KITT Framework Voice Engine
 
 ## Overview
 
-The KITT Framework Voice Engine integrates the Kyutai Moshi model for voice interaction capabilities on Android and macOS platforms. This document outlines the setup, performance considerations, and licensing compliance for using Kyutai Moshi within our framework.
+The KITT Framework Voice Engine integrates the sherpa-onnx model for voice interaction capabilities on Android and macOS platforms. This document outlines the setup, performance considerations, and licensing compliance for using sherpa-onnx within our framework.
 
 ## Performance Requirements
 
@@ -14,21 +14,21 @@ As per the KITT Framework monorepo rules, the voice engine adheres to the follow
 
 ## Platform Support
 
-- **Android:** Model files are stored at `/data/data/com.kitt.android/models/moshi` for optimal access on Android hardware.
-- **macOS:** Model files are bundled within the application at `/Applications/KITT.app/Contents/Resources/models/moshi`.
+- **Android:** Model files are stored at `/data/data/com.kitt.android/models/sherpa-onnx` for optimal access on Android hardware.
+- **macOS:** Model files are bundled within the application at `/Applications/KITT.app/Contents/Resources/models/sherpa-onnx`.
 
 ## Integration Details
 
-The voice engine initializes Kyutai Moshi with platform-specific configurations, ensuring offline operation and performance monitoring to meet latency targets. Key functions include:
+The voice engine initializes sherpa-onnx with platform-specific configurations, ensuring offline operation and performance monitoring to meet latency targets. Key functions include:
 
-- `initVoiceEngine(options)`: Initializes the voice engine with platform-specific settings and Kyutai Moshi model.
+- `initVoiceEngine(options)`: Initializes the voice engine with platform-specific settings and sherpa-onnx model.
 - `processVoiceInput(input)`: Processes voice input with latency tracking to ensure compliance with the 200ms rule.
 
 ## Licensing and Attribution
 
-The Kyutai Moshi model is used under the **Creative Commons Attribution (CC-BY)** license. We provide the following attribution as required:
+The sherpa-onnx model is used under the **MIT** license. We provide the following attribution as required:
 
-- **Kyutai Moshi Model Attribution:** The KITT Framework Voice Engine utilizes the Kyutai Moshi model for voice processing. Kyutai Moshi is developed by Kyutai and licensed under CC-BY. For more information, visit the Kyutai project repository or official documentation.
+- **sherpa-onnx Model Attribution:** The KITT Framework Voice Engine utilizes the sherpa-onnx model for voice processing. sherpa-onnx is developed by k2-fsa and licensed under MIT. For more information, visit the sherpa-onnx project repository at https://github.com/k2-fsa/sherpa-onnx.
 
 In compliance with the monorepo rules, no references to copyrighted intellectual property are made, and generic terms like "voice assistant" are used throughout the codebase and documentation.
 
@@ -37,7 +37,7 @@ In compliance with the monorepo rules, no references to copyrighted intellectual
 - Ensure that the model files are correctly placed in the specified paths for each platform.
 - Monitor performance logs to address any latency issues exceeding the 200ms target.
 - All features must remain functional in offline mode, adhering to the offline-first foundation of the KITT Framework.
-- **Model Download:** If the Moshi model files are not already included or specified, they can be downloaded from the official Hugging Face repository at [https://huggingface.co/kyutai/stt-1b-en_fr](https://huggingface.co/kyutai/stt-1b-en_fr).
+- **Model Download:** If the sherpa-onnx model files are not already included or specified, they can be downloaded from the official repository at https://github.com/k2-fsa/sherpa-onnx.
 
 ## Contact
 

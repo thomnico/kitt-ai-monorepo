@@ -1,14 +1,14 @@
 {
   "name": "@kitt/voice",
   "version": "0.1.0",
-  "description": "Voice interaction engine for KITT Framework using Kyutai Moshi",
+  "description": "Voice interaction engine for KITT Framework using sherpa-onnx",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c"
   },
   "dependencies": {
-    "kyutai-moshi": "latest"
+    "sherpa-onnx": "latest"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.0",
@@ -16,6 +16,6 @@
     "rollup": "^3.0.0"
   },
   "author": "KITT Framework Team",
-  "license": "CC-BY",
-  "licenseNote": "Kyutai Moshi model used under CC-BY license. Proper attribution provided in documentation."
+  "license": "MIT",
+  "licenseNote": "sherpa-onnx model used under MIT license. Proper attribution provided in documentation."
 }

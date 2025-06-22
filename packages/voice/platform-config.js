@@ -1,8 +1,8 @@
 /**
  * Platform-specific configurations for the voice engine.
- * This file defines settings for Android and macOS to integrate Kyutai Moshi.
+ * This file defines settings for Android and macOS to integrate sherpa-onnx.
  * 
- * License: CC-BY for Kyutai Moshi model usage. Attribution provided in documentation.
+ * License: MIT for sherpa-onnx model usage. Attribution provided in documentation.
  */
 
 /**
@@ -12,7 +12,7 @@
 export const platform = {
   android: {
     platform: 'android',
-    modelPath: '/data/data/com.kitt.android/models/moshi', // Path optimized for Android hardware
+    modelPath: '/data/data/com.kitt.android/models/sherpa-onnx', // Path optimized for Android hardware
     performanceTarget: {
       latencyMs: 200, // Enforce 200ms latency rule
       hardware: 'Crosscall Core-Z5', // Target hardware as per monorepo rules
@@ -23,7 +23,7 @@ export const platform = {
   },
   macos: {
     platform: 'macos',
-    modelPath: '/Applications/KITT.app/Contents/Resources/models/moshi', // Path for macOS app bundle
+    modelPath: '/Applications/KITT.app/Contents/Resources/models/sherpa-onnx', // Path for macOS app bundle
     performanceTarget: {
       latencyMs: 200, // Enforce 200ms latency rule
       hardware: 'MacBook Pro', // Generic macOS hardware target

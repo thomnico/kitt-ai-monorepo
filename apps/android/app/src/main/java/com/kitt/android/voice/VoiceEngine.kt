@@ -11,14 +11,14 @@ private const val TAG = "VoiceEngine"
 /**
  * Voice Engine for KITT Framework on Android
  * This class serves as the entry point for voice interaction capabilities,
- * integrating Kyutai Moshi for voice processing on Android.
+ * integrating sherpa-onnx for voice processing on Android.
  *
- * License: CC-BY for Kyutai Moshi model usage. Attribution provided in documentation.
+ * License: MIT for sherpa-onnx model usage. Attribution provided in documentation.
  */
 class VoiceEngine(private val context: Context) {
 
-    private var moshiInstance: Any? = null // Instance for Kyutai Moshi model
-    private val modelPath = "/data/data/com.kitt.android/models/moshi"
+    private var sherpaOnnxInstance: Any? = null // Instance for sherpa-onnx model
+    private val modelPath = "/data/data/com.kitt.android/models/sherpa-onnx"
 
     /**
      * Initialize the voice engine with platform-specific configurations.
@@ -34,7 +34,7 @@ class VoiceEngine(private val context: Context) {
             try {
                 modelDir.mkdirs()
                 // Copy the model from APK assets for offline use
-                copyMoshiModelFromAssets()
+                copySherpaOnnxModelFromAssets()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create model directory or copy model from assets: ${e.message}")
             }
@@ -42,31 +42,31 @@ class VoiceEngine(private val context: Context) {
             Log.i(TAG, "Model directory exists: $modelPath")
         }
 
-        // Initialize Kyutai Moshi with offline-first approach
+        // Initialize sherpa-onnx with offline-first approach
         try {
-            // Actual initialization logic for Moshi model
-            moshiInstance = loadMoshiModel(modelPath)
+            // Actual initialization logic for sherpa-onnx model
+            sherpaOnnxInstance = loadSherpaOnnxModel(modelPath)
             val initTime = System.currentTimeMillis() - startTime
             if (initTime > MAX_LATENCY_MS) {
                 Log.w(TAG, "Voice engine initialization exceeded latency target: ${initTime}ms")
             }
-            Log.i(TAG, "Voice engine initialized successfully with Moshi in ${initTime}ms")
+            Log.i(TAG, "Voice engine initialized successfully with sherpa-onnx in ${initTime}ms")
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize voice engine with Moshi", e)
+            Log.e(TAG, "Failed to initialize voice engine with sherpa-onnx", e)
             return false
         }
     }
 
     /**
-     * Copy the Moshi model from APK assets to internal storage for offline use.
+     * Copy the sherpa-onnx model from APK assets to internal storage for offline use.
      */
-    private fun copyMoshiModelFromAssets() {
+    private fun copySherpaOnnxModelFromAssets() {
         // Copy model files bundled in APK assets to internal storage
-        Log.i(TAG, "Copying Kyutai Moshi model from assets to $modelPath")
+        Log.i(TAG, "Copying sherpa-onnx model from assets to $modelPath")
         try {
             val assetManager = context.assets
-            val modelAssetPath = "models/moshi"
+            val modelAssetPath = "models/sherpa-onnx"
             val files = assetManager.list(modelAssetPath)
             if (files != null && files.isNotEmpty()) {
                 for (file in files) {
@@ -77,7 +77,7 @@ class VoiceEngine(private val context: Context) {
                     }
                     inputStream.close()
                 }
-                Log.i(TAG, "Moshi model copied successfully from assets")
+                Log.i(TAG, "sherpa-onnx model copied successfully from assets")
             } else {
                 Log.w(TAG, "No model files found in assets at $modelAssetPath")
             }
@@ -87,13 +87,13 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
-     * Load the Moshi model from the specified path.
+     * Load the sherpa-onnx model from the specified path.
      * @param path The path to the model files.
      * @return An object representing the loaded model.
      */
-    private fun loadMoshiModel(path: String): Any {
+    private fun loadSherpaOnnxModel(path: String): Any {
         // Simulate loading the model; in a real scenario, this would interface with native bindings
-        Log.i(TAG, "Loading Moshi model from $path")
+        Log.i(TAG, "Loading sherpa-onnx model from $path")
         return Object() // Placeholder for actual model loading
     }
 
@@ -104,13 +104,13 @@ class VoiceEngine(private val context: Context) {
      */
     fun processVoiceInput(input: ByteArray): String {
         val startTime = System.currentTimeMillis()
-        if (moshiInstance == null) {
+        if (sherpaOnnxInstance == null) {
             Log.e(TAG, "Voice engine not initialized")
             return "Error: Voice engine not initialized"
         }
 
-        // Process voice input using Kyutai Moshi model
-        val result = processWithMoshi(input)
+        // Process voice input using sherpa-onnx model
+        val result = processWithSherpaOnnx(input)
         val processTime = System.currentTimeMillis() - startTime
         if (processTime > MAX_LATENCY_MS) {
             Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
@@ -120,23 +120,23 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
-     * Process the input data with the Moshi model.
+     * Process the input data with the sherpa-onnx model.
      * @param input The raw voice data.
      * @return The processed text result.
      */
-    private fun processWithMoshi(input: ByteArray): String {
-        // Simulate processing with Moshi; in a real implementation, this would call native methods
-        return "Processed voice input with Moshi: ${input.size} bytes"
+    private fun processWithSherpaOnnx(input: ByteArray): String {
+        // Simulate processing with sherpa-onnx; in a real implementation, this would call native methods
+        return "Processed voice input with sherpa-onnx: ${input.size} bytes"
     }
 
     /**
-     * Download the Moshi model from a specified source to local storage for offline use.
+     * Download the sherpa-onnx model from a specified source to local storage for offline use.
      * @param sourceUrl The URL or source from which to download the model. If empty, uses the default URL.
      * @return Boolean indicating if the download was successful.
      */
-    fun downloadMoshiModel(sourceUrl: String = ""): Boolean {
-        val downloadUrl = if (sourceUrl.isEmpty()) "https://huggingface.co/kyutai/stt-1b-en_fr" else sourceUrl
-        Log.d(TAG, "Initiating download of Moshi model from $downloadUrl")
+    fun downloadSherpaOnnxModel(sourceUrl: String = ""): Boolean {
+        val downloadUrl = if (sourceUrl.isEmpty()) "https://github.com/k2-fsa/sherpa-onnx" else sourceUrl
+        Log.d(TAG, "Initiating download of sherpa-onnx model from $downloadUrl")
         try {
             // Ensure model directory exists
             val modelDir = File(modelPath)
@@ -149,19 +149,19 @@ class VoiceEngine(private val context: Context) {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
             val uri = android.net.Uri.parse(downloadUrl)
             val request = android.app.DownloadManager.Request(uri)
-            request.setTitle("Kyutai Moshi Model")
+            request.setTitle("sherpa-onnx Model")
             request.setDescription("Downloading voice model for offline use")
-            request.setDestinationInExternalFilesDir(context, null, "models/moshi/moshi_model.bin")
+            request.setDestinationInExternalFilesDir(context, null, "models/sherpa-onnx/sherpa_onnx_model.bin")
             request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             val downloadId = downloadManager.enqueue(request)
-            Log.d(TAG, "Download started with ID: $downloadId for Moshi model to $modelPath")
+            Log.d(TAG, "Download started with ID: $downloadId for sherpa-onnx model to $modelPath")
 
             // Monitor download completion (this is a simplified approach; in a real app, use a BroadcastReceiver)
             Log.d(TAG, "Monitoring download completion for ID: $downloadId")
             // Note: Actual monitoring and completion check would be implemented with a BroadcastReceiver
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to download Moshi model: ${e.message}")
+            Log.e(TAG, "Failed to download sherpa-onnx model: ${e.message}")
             return false
         }
     }

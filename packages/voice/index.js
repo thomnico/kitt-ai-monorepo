@@ -1,12 +1,12 @@
 /**
  * Voice Engine for KITT Framework
  * This module serves as the entry point for voice interaction capabilities,
- * integrating Kyutai Moshi for voice processing on Android and macOS.
+ * integrating sherpa-onnx for voice processing on Android and macOS.
  * 
- * License: CC-BY for Kyutai Moshi model usage. Attribution provided in documentation.
+ * License: MIT for sherpa-onnx model usage. Attribution provided in documentation.
  */
 
-import { initializeMoshi } from 'kyutai-moshi';
+import { initializeSherpaOnnx } from 'sherpa-onnx';
 import { platform } from './platform-config.js';
 
 // Performance target: Ensure end-to-end latency < 200ms as per monorepo rules
@@ -26,11 +26,11 @@ export async function initVoiceEngine(options = {}) {
     throw new Error(`Unsupported platform: ${options.platform}`);
   }
 
-  // Initialize Kyutai Moshi with offline-first approach
-  const moshiInstance = await initializeMoshi({
+  // Initialize sherpa-onnx with offline-first approach
+  const sherpaOnnxInstance = await initializeSherpaOnnx({
     modelPath: config.modelPath,
     offlineMode: true, // Enforce offline-first as per monorepo rules
-    ...options.moshiOptions
+    ...options.sherpaOnnxOptions
   });
 
   const initTime = performance.now() - startTime;
@@ -39,11 +39,11 @@ export async function initVoiceEngine(options = {}) {
   }
 
   return {
-    instance: moshiInstance,
+    instance: sherpaOnnxInstance,
     platform: config.platform,
     processVoiceInput: async (input) => {
       const processStart = performance.now();
-      const result = await moshiInstance.process(input);
+      const result = await sherpaOnnxInstance.process(input);
       const processTime = performance.now() - processStart;
       if (processTime > MAX_LATENCY_MS) {
         console.warn(`Voice processing exceeded latency target: ${processTime}ms`);
