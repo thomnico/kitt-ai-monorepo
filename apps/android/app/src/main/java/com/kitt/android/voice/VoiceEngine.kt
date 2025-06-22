@@ -135,7 +135,7 @@ class VoiceEngine(private val context: Context) {
      * @return Boolean indicating if the download was successful.
      */
     fun downloadSherpaOnnxModel(sourceUrl: String = ""): Boolean {
-        val downloadUrl = if (sourceUrl.isEmpty()) "https://github.com/k2-fsa/sherpa-onnx" else sourceUrl
+        val downloadUrl = if (sourceUrl.isEmpty()) "https://huggingface.co/csukuangfj/sherpa-onnx-zipformer-en-2023-03-30" else sourceUrl
         Log.d(TAG, "Initiating download of sherpa-onnx model from $downloadUrl")
         try {
             // Ensure model directory exists
