@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT iOS Application is a flagship component of the KITT Framework, delivering a voice-driven AI assistant tailored for Apple devices. Built to integrate seamlessly with iOS and iPadOS ecosystems, it leverages the KITT Framework's modular components to provide robust voice interaction, data synchronization, and user interface consistency. Optimized for automotive environments via CarPlay and general mobile use, this application serves as a reference implementation for developers and a premium user experience for end-users within the KITT ecosystem.
+The KITT iOS Application is a flagship component of the KITT Framework, delivering a voice-driven AI assistant tailored for Apple devices. Built to integrate seamlessly with iOS and iPadOS ecosystems, it leverages the KITT Framework's modular components to provide robust voice interaction, data synchronization, and user interface consistency. Optimized for automotive environments via CarPlay and general mobile use, this application serves as a reference implementation for developers and a premium user experience for end-users within the KITT ecosystem. It adheres to the "offline-first" principle, meaning it relies on data local to the device with download and synchronization possible when a network is available.
 
 **Key Features:**
 

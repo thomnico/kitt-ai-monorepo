@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT API Application is a central backend component of the KITT Framework, designed to provide robust cloud-based services for voice-driven AI applications. It serves as the primary interface for data synchronization, AI model inference, user authentication, and third-party integrations across KITT ecosystem apps on Android, iOS, and other platforms. Built with scalability, security, and developer extensibility in mind, this API ensures seamless interaction between client applications and backend services, supporting both automotive and general mobile use cases.
+The KITT API Application is a central backend component of the KITT Framework, designed to provide robust cloud-based services for voice-driven AI applications. It serves as the primary interface for data synchronization, AI model inference, user authentication, and third-party integrations across KITT ecosystem apps on Android, iOS, and other platforms. Built with scalability, security, and developer extensibility in mind, this API ensures seamless interaction between client applications and backend services, supporting both automotive and general mobile use cases. While the KITT Framework prioritizes an "offline-first" approach—relying on data local to the device with download and synchronization possible when a network is available—this API component primarily operates in a cloud context to support client apps with such capabilities.
 
 **Key Features:**
 

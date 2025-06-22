@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT Shared Component is a foundational module of the KITT Framework, designed to provide common utilities, data models, and core functionalities that are shared across all other components and applications within the ecosystem. It ensures consistency, reduces redundancy, and simplifies development by offering a centralized set of reusable tools and abstractions. This component serves as a core dependency for all KITT Framework projects, enabling efficient cross-platform development for Android and iOS.
+The KITT Shared Component is a foundational module of the KITT Framework, designed to provide common utilities, data models, and core functionalities that are shared across all other components and applications within the ecosystem. It ensures consistency, reduces redundancy, and simplifies development by offering a centralized set of reusable tools and abstractions. This component serves as a core dependency for all KITT Framework projects, enabling efficient cross-platform development for Android and iOS. It supports the framework's "offline-first" approach, which relies on data local to the device with download and synchronization possible when a network is available, ensuring utilities and data models function seamlessly in offline scenarios.
 
 **Key Features:**
 

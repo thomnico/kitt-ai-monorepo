@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT Data Sync Component is a critical module of the KITT Framework, designed to enable seamless data synchronization across devices and platforms for applications built with KITT. It provides robust offline-first capabilities with efficient cloud synchronization, ensuring data consistency and availability for user preferences, conversation histories, and application states. This component serves as a reusable library for developers to integrate reliable data sync within the KITT ecosystem.
+The KITT Data Sync Component is a critical module of the KITT Framework, designed to enable seamless data synchronization across devices and platforms for applications built with KITT. It provides robust offline-first capabilities with efficient cloud synchronization, ensuring data consistency and availability for user preferences, conversation histories, and application states. "Offline-first" means relying on data local to the device with download and synchronization possible when a network is available. This component serves as a reusable library for developers to integrate reliable data sync within the KITT ecosystem.
 
 **Key Features:**
 

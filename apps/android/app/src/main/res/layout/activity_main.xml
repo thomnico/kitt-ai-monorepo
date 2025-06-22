@@ -17,6 +17,21 @@
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
+
+    <TextView
+        android:id="@+id/sttStatusTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="#EEEEEE"
+        android:padding="8dp"
+        android:text="STT: Initializing... | Interruption: Unknown"
+        android:textSize="14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
@@ -25,6 +40,26 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:text="Start Listening"
+        app:layout_constraintBottom_toTopOf="@+id/readCguButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/micActivityIndicator"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@android:drawable/ic_lock_silent_mode_off"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="@+id/startListeningButton"
+        app:layout_constraintEnd_toStartOf="@+id/startListeningButton"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/readCguButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Read CGU for Interruption"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

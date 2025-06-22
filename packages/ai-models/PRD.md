@@ -16,7 +16,7 @@ The KITT AI Models Component is a foundational module of the KITT Framework, des
 - Management of multiple AI models for voice and language processing
 - Cross-platform support for Android and iOS with hardware acceleration
 - Optimized inference with <100ms latency for real-time applications
-- Offline-first model execution with optional cloud updates
+- Offline-first model execution, relying on data local to the device with download and synchronization possible when a network is available, with optional cloud updates
 - Support for model customization and extensibility
 
 ## 1. Component Overview

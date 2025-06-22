@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT Voice Component is a core module of the KITT Framework, designed to provide advanced voice interaction capabilities for various applications, including automotive environments via Android Auto and iOS CarPlay integration. It enables full-duplex voice conversations with low-latency responses, leveraging on-device AI models for offline-first functionality. This component serves as a reusable library for developers building voice-driven applications within the KITT ecosystem.
+The KITT Voice Component is a core module of the KITT Framework, designed to provide advanced voice interaction capabilities for various applications, including automotive environments via Android Auto and iOS CarPlay integration. It enables full-duplex voice conversations with low-latency responses, leveraging on-device AI models for offline-first functionality. "Offline-first" means relying on data local to the device with download and synchronization possible when a network is available. This component serves as a reusable library for developers building voice-driven applications within the KITT ecosystem.
 
 **Key Features:**
 

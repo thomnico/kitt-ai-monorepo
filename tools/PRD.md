@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The KITT Framework is a cross-platform conversational AI system that brings KITT-like voice assistant capabilities to automotive environments. Built as a monorepo architecture, this framework supports Android native, iOS native applications, and a Supabase-backed cloud infrastructure while maintaining offline-first functionality with local AI model execution.
+The KITT Framework is a cross-platform conversational AI system that brings KITT-like voice assistant capabilities to automotive environments. Built as a monorepo architecture, this framework supports Android native, iOS native applications, and a Supabase-backed cloud infrastructure while maintaining offline-first functionality with local AI model execution. "Offline-first" means relying on data local to the device with download and synchronization possible when a network is available.
 
 **Key Value Propositions:**
 

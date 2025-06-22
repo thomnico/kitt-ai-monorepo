@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT Android App is a native Android application that brings conversational AI assistant capabilities to vehicles through Android Auto integration. Built for the Crosscall Core-Z5 and similar rugged devices, it leverages on-device AI models (Kyutai Moshi, Gemma) to provide natural voice interactions while maintaining offline-first functionality.
+The KITT Android App is a native Android application that brings conversational AI assistant capabilities to vehicles through Android Auto integration. Built for the Crosscall Core-Z5 and similar rugged devices, it leverages on-device AI models (Kyutai Moshi, Gemma) to provide natural voice interactions while maintaining offline-first functionality. "Offline-first" means relying on data local to the device with download and synchronization possible when a network is available.
 
 **Key Features:**
 
@@ -59,6 +59,7 @@ Deliver a production-ready Android application that demonstrates the capabilitie
 - **Compile SDK**: Latest stable (API 35+)
 - **Build Tools**: Android Studio Hedgehog or newer
 - **NDK**: Required for AI model integration (C++ components)
+- **Gradle Wrapper**: The Gradle wrapper version must not be changed or updated to ensure consistent builds across development environments. Use the version specified in `gradle/wrapper/gradle-wrapper.properties`.
 
 ### 2.3 AI Model Configuration
 

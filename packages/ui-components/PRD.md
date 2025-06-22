@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The KITT UI Components module is a critical part of the KITT Framework, providing a comprehensive set of reusable, accessible, and customizable user interface elements tailored for voice-driven and AI-powered applications. Designed for cross-platform compatibility across Android and iOS, these components ensure a consistent look and feel while optimizing for automotive and industrial environments. This module serves as a foundational library for developers to build intuitive and visually cohesive interfaces within the KITT ecosystem.
+The KITT UI Components module is a critical part of the KITT Framework, providing a comprehensive set of reusable, accessible, and customizable user interface elements tailored for voice-driven and AI-powered applications. Designed for cross-platform compatibility across Android and iOS, these components ensure a consistent look and feel while optimizing for automotive and industrial environments. This module serves as a foundational library for developers to build intuitive and visually cohesive interfaces within the KITT ecosystem. It supports the framework's "offline-first" approach, which relies on data local to the device with download and synchronization possible when a network is available, ensuring UI components function seamlessly without network dependency.
 
 **Key Features:**
 

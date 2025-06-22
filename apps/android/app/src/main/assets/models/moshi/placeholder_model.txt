@@ -1,0 +1,2 @@
+This is a placeholder file representing the Kyutai Moshi model bundled in the APK for offline use.
+In a real implementation, this directory would contain the actual model files (e.g., 4-bit quantized model for ~4GB VRAM).
