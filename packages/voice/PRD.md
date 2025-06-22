@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0  
 **Date:** June 22, 2025  
-**Status:** DRAFT  
+**Status:** DEV  
 **Product Manager:** Nicolas Thomas  
 **Technical Lead:** Nicolas Thomas  
 **Target Release:** Q1 2026

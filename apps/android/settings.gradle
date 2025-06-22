@@ -1,0 +1,3 @@
+// settings.gradle for KITT Android App
+include ':app'
+rootProject.name = 'KITT Android'

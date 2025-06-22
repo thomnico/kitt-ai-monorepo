@@ -1,0 +1,74 @@
+# Node.js
+node_modules/
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+lerna-debug.*
+
+# macOS
+.DS_Store
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules
+jspm_packages
+
+# Build directories
+dist
+build
+coverage
+lib-cov
+coverage
+coverage.json
+coverage.lcov
+.coverage
+coverage.html
+lcov.info
+test-results
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary files created by Metro
+.npmrc*
+.yarnrc*
+.yarnrc.yml
+.yarn/
+
+# macOS hidden files
+._*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Model-specific files
+*.bin
+*.pth
+*.pt
+*.h5
+*.model
+*.weights
+data/
+models/
+checkpoints/
+runs/
+
+# Other
+.DS_Store
+Thumbs.db

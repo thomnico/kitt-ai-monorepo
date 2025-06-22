@@ -1,0 +1,40 @@
+# Android specific
+.gradle
+/build
+/local.properties
+/.idea
+.DS_Store
+*.iml
+*.hprof
+*.pyc
+*.pyo
+*.rbc
+*.yarb
+.env
+.poweredtest
+*.gem
+captures/
+.externalNativeBuild
+.cxx/
+generated/
+app/build/
+app/.externalNativeBuild/
+app/.cxx/
+
+# macOS
+.DS_Store
+
+# Temporary files created by Metro
+.npmrc*
+.yarnrc*
+.yarnrc.yml
+.yarn/
+
+# macOS hidden files
+._*
+
+# Ignore Gradle wrapper files if not used
+gradlew
+gradlew.bat
+gradle-wrapper.jar
+gradle-wrapper.properties
