@@ -482,7 +482,7 @@ kitt-android/
 
 ### 13.1 External Dependencies
 
-- **Kyutai Labs**: Continued Moshi model support
+- **Vosk**: The vosk projec
 - **Google**: Android Auto platform stability
 - **Qualcomm**: Adreno GPU driver optimization
 - **Crosscall**: Hardware partnership and testing

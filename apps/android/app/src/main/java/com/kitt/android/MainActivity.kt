@@ -4,25 +4,24 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
+// import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.appcompat.widget.SwitchCompat
 import com.kitt.android.voice.VoiceEngine
 import java.util.Locale
 
-class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
+class MainActivity : ComponentActivity() {
 
     private lateinit var kittScannerView: KittScannerView
     private lateinit var transcriptionTextView: TextView
     private lateinit var sttStatusTextView: TextView
-    private lateinit var textToSpeech: TextToSpeech
     private var isListening = false
     private lateinit var voiceEngine: VoiceEngine
     private var currentLanguage = "en-US"
@@ -42,7 +41,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -55,15 +54,43 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         transcriptionTextView = findViewById(R.id.transcriptionTextView)
         sttStatusTextView = findViewById(R.id.sttStatusTextView)
 
-        textToSpeech = TextToSpeech(this, this)
-
         voiceEngine = VoiceEngine(this)
         voiceEngine.initVoiceEngine()
+        voiceEngine.setTranscriptionCallback(object : VoiceEngine.TranscriptionCallback {
+            override fun onTranscription(transcription: String) {
+                runOnUiThread {
+                    transcriptionTextView.text = transcription
+                }
+            }
+        })
 
         // Check permissions and start listening automatically when the app launches
         checkPermissionsAndStartListening()
 
         updateSttStatus()
+
+        // Setup switch listeners for talk mode and language selection
+        setupSwitchListeners()
+    }
+
+    private fun setupSwitchListeners() {
+        val talkSwitch: SwitchCompat = findViewById(R.id.talkSwitch)
+        val languageSwitch: SwitchCompat = findViewById(R.id.languageSwitch)
+
+        talkSwitch.setOnCheckedChangeListener { _, isChecked ->
+            kittScannerView.setTalkingMode(isChecked)
+            if (isChecked) {
+                transcriptionTextView.text = "Talk mode enabled"
+            } else {
+                transcriptionTextView.text = "Talk mode disabled"
+            }
+        }
+
+        languageSwitch.setOnCheckedChangeListener { _, isChecked ->
+            currentLanguage = if (isChecked) "fr-FR" else "en-US"
+            val languageText = if (isChecked) "French" else "English"
+            transcriptionTextView.text = "Language set to $languageText"
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -118,7 +145,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private fun updateSttStatus() {
         val sttStatus = if (isListening) "Listening" else "Not Listening"
-        sttStatusTextView.text = "STT: $sttStatus | Interruption: $interruptionStatus"
+        val languageText = if (currentLanguage == "fr-FR") "French" else "English"
+        // Placeholder values for GPU and RAM as actual detection would require additional system queries
+        val gpuStatus = "GPU: Detected (Placeholder)"
+        val ramStatus = "RAM: 4GB (Placeholder)"
+        val sttEngine = "STT: Vosk"
+        val ttsEngine = "TTS: None (Vosk-only)"
+        sttStatusTextView.text = "$sttEngine | $ttsEngine | Language: $languageText | $sttStatus | Interruption: $interruptionStatus | $gpuStatus | $ramStatus"
     }
 
     private fun checkPermissionsAndStartListening() {
@@ -163,18 +196,9 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             }
         }
         transcriptionTextView.text = response
-        textToSpeech.speak(response, TextToSpeech.QUEUE_FLUSH, null, null)
-        interruptionStatus = if (textToSpeech.isSpeaking) "Speaking" else "Not Speaking"
+        Log.i(TAG, "Voice feedback: $response")
+        interruptionStatus = "Not Speaking"
         updateSttStatus()
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val locale = Locale.US
-            textToSpeech.language = locale
-        } else {
-            Log.e("MainActivity", "TextToSpeech initialization failed")
-        }
     }
 
     override fun onDestroy() {
@@ -182,8 +206,6 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         if (isListening) {
             voiceEngine.stopListening()
         }
-        textToSpeech.stop()
-        textToSpeech.shutdown()
         super.onDestroy()
     }
 }

@@ -37,22 +37,6 @@ class VoiceEngine(private val context: Context) {
     private val modelPath = "${context.filesDir.absolutePath}/models/vosk"
     private var isListening = false
     private var currentModelKey = "en-us"
-    private var transcriptionCallback: TranscriptionCallback? = null
-
-    /**
-     * Interface for transcription callbacks.
-     */
-    interface TranscriptionCallback {
-        fun onTranscription(transcription: String)
-    }
-
-    /**
-     * Set the callback for transcription results.
-     * @param callback The callback to be invoked with transcription results.
-     */
-    fun setTranscriptionCallback(callback: TranscriptionCallback) {
-        this.transcriptionCallback = callback
-    }
 
     /**
      * Initialize the voice engine with platform-specific configurations.
@@ -404,7 +388,6 @@ class VoiceEngine(private val context: Context) {
         recorder = null
         val finalResult = recognizer?.result ?: "{}"
         Log.i(TAG, "Stopped listening for voice input")
-        transcriptionCallback?.onTranscription(finalResult)
         return finalResult
     }
 
@@ -429,9 +412,6 @@ class VoiceEngine(private val context: Context) {
                 Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
             }
             Log.i(TAG, "Partial voice input processed in ${processTime}ms")
-            if (partialResult.isNotEmpty()) {
-                transcriptionCallback?.onTranscription(partialResult)
-            }
             return partialResult
         }
         return ""
