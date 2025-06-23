@@ -1,12 +1,12 @@
 /**
  * Voice Engine for KITT Framework
  * This module serves as the entry point for voice interaction capabilities,
- * integrating Kyutai Moshi for voice processing on Android and macOS.
+ * integrating Vosk for voice processing on Android and macOS.
  * 
- * License: CC-BY for Kyutai Moshi model usage. Attribution provided in documentation.
+ * License: Apache 2.0 for Vosk model usage. Attribution provided in documentation.
  */
 
-import { initializeMoshi } from 'kyutai-moshi';
+import { initializeVosk } from 'vosk';
 import { platform } from './platform-config.js';
 
 // Performance target: Ensure end-to-end latency < 200ms as per monorepo rules
@@ -26,11 +26,11 @@ export async function initVoiceEngine(options = {}) {
     throw new Error(`Unsupported platform: ${options.platform}`);
   }
 
-  // Initialize Kyutai Moshi with offline-first approach
-  const moshiInstance = await initializeMoshi({
+  // Initialize Vosk with offline-first approach
+  const voskInstance = await initializeVosk({
     modelPath: config.modelPath,
     offlineMode: true, // Enforce offline-first as per monorepo rules
-    ...options.moshiOptions
+    ...options.voskOptions
   });
 
   const initTime = performance.now() - startTime;
@@ -39,11 +39,11 @@ export async function initVoiceEngine(options = {}) {
   }
 
   return {
-    instance: moshiInstance,
+    instance: voskInstance,
     platform: config.platform,
     processVoiceInput: async (input) => {
       const processStart = performance.now();
-      const result = await moshiInstance.process(input);
+      const result = await voskInstance.process(input);
       const processTime = performance.now() - processStart;
       if (processTime > MAX_LATENCY_MS) {
         console.warn(`Voice processing exceeded latency target: ${processTime}ms`);
