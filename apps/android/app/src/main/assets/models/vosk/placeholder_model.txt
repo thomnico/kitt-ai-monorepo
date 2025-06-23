@@ -1,3 +1,5 @@
-This is a placeholder file for the Vosk model. In a production environment, the actual Vosk model files (e.g., vosk-model-small-fr-0.22) should be placed in this directory or downloaded to internal storage for offline use.
+This file serves as a documentation placeholder for the Vosk speech recognition models used in the KITT Framework Android app. The actual models are stored in the following files:
+- vosk-model-small-en-us-0.15.zip (English US, small model)
+- vosk-model-small-fr-0.22.zip (French, small model)
 
-For more information on integrating Vosk with the KITT Framework, refer to the documentation in packages/voice/docs/vosk-integration.md.
+Configuration for model usage is defined in config.json in this directory. These models are used for offline speech recognition, adhering to the offline-first principle of the KITT Framework.

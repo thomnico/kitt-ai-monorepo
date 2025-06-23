@@ -1,3 +1,0 @@
-This is a deprecated placeholder file for the Moshi model. The KITT Framework has transitioned to using Vosk for speech recognition. In a production environment, the actual Vosk model files (e.g., vosk-model-small-fr-0.22) should be placed in the 'vosk' directory or downloaded to internal storage for offline use.
-
-For more information on integrating Vosk with the KITT Framework, refer to the documentation in packages/voice/docs/vosk-integration.md.
