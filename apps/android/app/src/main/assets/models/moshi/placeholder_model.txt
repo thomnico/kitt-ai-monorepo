@@ -1,0 +1,7 @@
+# Moshi Model Placeholder
+
+This file serves as a placeholder for documentation purposes. Currently, there are no actual Moshi models integrated into this project in this directory.
+
+Moshi models are intended for use in voice synthesis or recognition tasks for the KITT Assistant app. The integration of Moshi models is pending, and this placeholder will be updated once the models are available and integrated.
+
+For more information on Moshi integration, refer to the documentation in the `packages/voice/docs/kyutai-moshi-integration.md` file.

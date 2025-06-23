@@ -1,6 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KITT Assistant</string>
+    <string name="transcription_waiting">Transcription: Waiting for input...</string>
+    <string name="transcription_format">Transcription: %1$s</string>
+    <string name="microphone_permission_denied">Microphone permission required for voice recognition</string>
+    <string name="permission_error_format">Permission error: %1$s</string>
+    <string name="talk_mode_enabled">Talk mode enabled</string>
+    <string name="talk_mode_disabled">Talk mode disabled</string>
+    <string name="language_set_format">Language set to %1$s</string>
+    <string name="hearing_format">Hearing: %1$s</string>
+    <string name="final_format">Final: %1$s</string>
+    <string name="language_english">English</string>
+    <string name="language_french">French</string>
+    <string name="stt_status_listening">Listening</string>
+    <string name="stt_status_not_listening">Not Listening</string>
+    <string name="stt_status_format">%1$s | %2$s | Language: %3$s | %4$s | Interruption: %5$s | %6$s | %7$s</string>
+    <string name="stt_engine">STT: Vosk</string>
+    <string name="tts_engine">TTS: None (Vosk-only)</string>
+    <string name="gpu_status">GPU: Detected (Placeholder)</string>
+    <string name="ram_status">RAM: 4GB (Placeholder)</string>
+    <string name="response_hello_en">Hello, how can I help you?</string>
+    <string name="response_hello_fr">Bonjour, comment puis-je vous aider ?</string>
+    <string name="response_time_en_format">The time is %1$s.</string>
+    <string name="response_time_fr_format">Il est %1$s.</string>
+    <string name="response_stop_en">Okay, stopping now.</string>
+    <string name="response_stop_fr">D\'accord, j\'arrête.</string>
+    <string name="response_unknown_en">Sorry, I don\'t understand.</string>
+    <string name="response_unknown_fr">Désolé, je ne comprends pas.</string>
+    <string name="button_activated_format">KITT: %1$s activated</string>
     <string-array name="model_options">
         <item>English</item>
         <item>French</item>

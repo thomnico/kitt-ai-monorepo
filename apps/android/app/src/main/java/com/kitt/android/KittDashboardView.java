@@ -10,9 +10,19 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.kitt.android.R;
 import com.kitt.android.KittButton;
 import com.kitt.android.KittScannerViewJava;
 import com.kitt.android.KittSpectrumView;
+import android.content.Context;
+import android.graphics.Color;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * Main KITT dashboard container that combines all UI components
@@ -74,8 +84,8 @@ public class KittDashboardView extends LinearLayout {
             buttons[i].setOnClickListener(v -> onKittButtonClick(buttonLabels[buttonIndex]));
             
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                120, 0, 1.0f);
-            params.setMargins(5, 5, 5, 5);
+                80, 60); // Fixed size instead of weight-based
+            params.setMargins(3, 3, 3, 3);
             sideButtonsLayout.addView(buttons[i], params);
         }
         
@@ -110,7 +120,7 @@ public class KittDashboardView extends LinearLayout {
         
         // Transcription TextView
         transcriptionView = new TextView(context);
-        transcriptionView.setText("Transcription: Waiting for input...");
+        transcriptionView.setText(R.string.transcription_waiting);
         transcriptionView.setTextColor(Color.WHITE);
         transcriptionView.setTextSize(16);
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
@@ -125,7 +135,7 @@ public class KittDashboardView extends LinearLayout {
     }
     
     private void onKittButtonClick(String buttonLabel) {
-        Toast.makeText(getContext(), "KITT: " + buttonLabel + " activated", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), getContext().getString(R.string.button_activated_format, buttonLabel), Toast.LENGTH_SHORT).show();
         
         // Add specific button functionality here
         switch (buttonLabel) {
@@ -183,7 +193,7 @@ public class KittDashboardView extends LinearLayout {
      */
     public void updateTranscription(String text) {
         if (transcriptionView != null) {
-            transcriptionView.setText("Transcription: " + text);
+            transcriptionView.setText(getContext().getString(R.string.transcription_format, text));
         }
     }
     

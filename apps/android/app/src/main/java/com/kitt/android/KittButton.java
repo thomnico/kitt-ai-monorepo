@@ -2,6 +2,7 @@ package com.kitt.android;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -27,34 +28,47 @@ public class KittButton extends View {
     
     public KittButton(Context context) {
         super(context);
-        init();
+        init(null);
     }
     
     public KittButton(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(attrs);
     }
     
     public KittButton(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(attrs);
     }
     
-    private void init() {
+    private void init(AttributeSet attrs) {
         backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         
-        // Configure text paint
+        // Configure text paint with smaller size for better fit
         textPaint.setColor(Color.WHITE);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(20);
+        textPaint.setTextSize(18); // Reduced from 48 for better fit
         textPaint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
         
         // Configure border paint
         borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(3);
+        borderPaint.setStrokeWidth(2);
         borderPaint.setColor(Color.WHITE);
+        
+        // Read XML attributes
+        if (attrs != null) {
+            TypedArray a = getContext().obtainStyledAttributes(attrs, new int[]{android.R.attr.text});
+            try {
+                String xmlText = a.getString(0);
+                if (xmlText != null) {
+                    text = xmlText;
+                }
+            } finally {
+                a.recycle();
+            }
+        }
         
         setupGlowAnimation();
         setClickable(true);
@@ -78,36 +92,43 @@ public class KittButton extends View {
         
         int width = getWidth();
         int height = getHeight();
-        int padding = 8;
+        int padding = 3; // Reduced padding
         
         // Draw button background
         backgroundPaint.setColor(buttonColor);
         
         if (isGlowing || isPressed) {
-            float shadowRadius = 15 * glowIntensity;
+            float shadowRadius = 6 * glowIntensity; // Reduced shadow
             backgroundPaint.setShadowLayer(shadowRadius, 0, 0, buttonColor);
             backgroundPaint.setAlpha((int) (255 * glowIntensity));
         } else {
-            backgroundPaint.setShadowLayer(8, 0, 0, buttonColor);
+            backgroundPaint.setShadowLayer(3, 0, 0, buttonColor); // Reduced shadow
             backgroundPaint.setAlpha(180);
         }
         
         RectF rect = new RectF(padding, padding, width - padding, height - padding);
-        canvas.drawRoundRect(rect, 12, 12, backgroundPaint);
+        canvas.drawRoundRect(rect, 6, 6, backgroundPaint); // Reduced corner radius
         
         // Draw border
         if (isPressed) {
             borderPaint.setColor(Color.YELLOW);
-            borderPaint.setStrokeWidth(4);
+            borderPaint.setStrokeWidth(3);
         } else {
             borderPaint.setColor(Color.WHITE);
             borderPaint.setStrokeWidth(2);
         }
-        canvas.drawRoundRect(rect, 12, 12, borderPaint);
+        canvas.drawRoundRect(rect, 6, 6, borderPaint);
         
-        // Draw text
-        float textY = height / 2f + textPaint.getTextSize() / 3f;
-        canvas.drawText(text, width / 2f, textY, textPaint);
+        // Draw text if it exists
+        if (text != null && !text.isEmpty()) {
+            // Dynamically adjust text size based on button dimensions
+            float maxTextSize = Math.min(height * 0.5f, width * 0.2f);
+            float finalTextSize = Math.min(18, maxTextSize);
+            textPaint.setTextSize(finalTextSize);
+            
+            float textY = height / 2f + textPaint.getTextSize() / 3f;
+            canvas.drawText(text, width / 2f, textY, textPaint);
+        }
     }
     
     @Override
@@ -133,9 +154,47 @@ public class KittButton extends View {
         return true;
     }
     
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        // Set reasonable minimum dimensions for the button
+        int minWidth = 50;  // Reduced from 200
+        int minHeight = 30; // Reduced from 80
+        
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        
+        int width, height;
+        
+        // Handle width measurement
+        if (widthMode == MeasureSpec.EXACTLY) {
+            width = widthSize;
+        } else if (widthMode == MeasureSpec.AT_MOST) {
+            width = Math.min(minWidth, widthSize);
+        } else {
+            width = minWidth;
+        }
+        
+        // Handle height measurement
+        if (heightMode == MeasureSpec.EXACTLY) {
+            height = heightSize;
+        } else if (heightMode == MeasureSpec.AT_MOST) {
+            height = Math.min(minHeight, heightSize);
+        } else {
+            height = minHeight;
+        }
+        
+        setMeasuredDimension(width, height);
+    }
+    
     public void setText(String text) {
         this.text = text;
         invalidate();
+    }
+    
+    public String getText() {
+        return text;
     }
     
     public void setButtonColor(int color) {
