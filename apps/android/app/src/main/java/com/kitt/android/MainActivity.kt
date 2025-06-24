@@ -14,12 +14,13 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.kitt.android.KittButton
+import com.kitt.android.KittSpectrumView
 import com.kitt.android.voice.VoiceEngine
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var kittScannerView: KittScannerView
+    private lateinit var kittSpectrumView: KittSpectrumView
     private lateinit var transcriptionTextView: TextView
     private lateinit var sttStatusTextView: TextView
     private var isListening = false
@@ -50,7 +51,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Initialize views
-        kittScannerView = findViewById(R.id.kittScannerView)
+        kittSpectrumView = findViewById(R.id.kittSpectrumView)
         transcriptionTextView = findViewById(R.id.transcriptionTextView)
         sttStatusTextView = findViewById(R.id.sttStatusTextView)
 
@@ -74,56 +75,41 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupSwitchListeners() {
-        val talkSwitch: KittButton = findViewById(R.id.talkSwitch)
-        val languageSwitch: KittButton = findViewById(R.id.languageSwitch)
-        val controlSwitch1: KittButton = findViewById(R.id.controlSwitch1)
-        val controlSwitch2: KittButton = findViewById(R.id.controlSwitch2)
-        val controlSwitch3: KittButton = findViewById(R.id.controlSwitch3)
-        val controlSwitch4: KittButton = findViewById(R.id.controlSwitch4)
+        val buttonAir: KittButton = findViewById(R.id.buttonAir)
+        val buttonOil: KittButton = findViewById(R.id.buttonOil)
+        val buttonP1: KittButton = findViewById(R.id.buttonP1)
+        val buttonP2: KittButton = findViewById(R.id.buttonP2)
+        val buttonS1: KittButton = findViewById(R.id.buttonS1)
+        val buttonS2: KittButton = findViewById(R.id.buttonS2)
+        val buttonP3: KittButton = findViewById(R.id.buttonP3)
+        val buttonP4: KittButton = findViewById(R.id.buttonP4)
+        val buttonAutoCruise: KittButton = findViewById(R.id.buttonAutoCruise)
+        val buttonNormalCruise: KittButton = findViewById(R.id.buttonNormalCruise)
 
-        var isTalkModeEnabled = false
-        var isFrenchLanguage = false
-        var isControl1On = false
-        var isControl2On = false
-        var isControl3On = false
-        var isControl4On = false
+        // Example of how to use the setLighted method
+        // You would add logic here to determine when to set a button as lighted
+        buttonAir.setLighted(true)
+        buttonOil.setLighted(false)
+        buttonP1.setLighted(true)
+        buttonP2.setLighted(false)
+        buttonS1.setLighted(true)
+        buttonS2.setLighted(false)
+        buttonP3.setLighted(true)
+        buttonP4.setLighted(false)
+        buttonAutoCruise.setLighted(true)
+        buttonNormalCruise.setLighted(false)
 
-        talkSwitch.setOnClickListener {
-            isTalkModeEnabled = !isTalkModeEnabled
-            kittScannerView.setTalkingMode(isTalkModeEnabled)
-            if (isTalkModeEnabled) {
-                transcriptionTextView.text = getString(R.string.talk_mode_enabled)
-            } else {
-                transcriptionTextView.text = getString(R.string.talk_mode_disabled)
-            }
-        }
-
-        languageSwitch.setOnClickListener {
-            isFrenchLanguage = !isFrenchLanguage
-            currentLanguage = if (isFrenchLanguage) "fr-FR" else "en-US"
-            val languageText = if (isFrenchLanguage) getString(R.string.language_french) else getString(R.string.language_english)
-            transcriptionTextView.text = getString(R.string.language_set_format, languageText)
-        }
-
-        controlSwitch1.setOnClickListener {
-            isControl1On = !isControl1On
-            transcriptionTextView.text = if (isControl1On) "Control 1: ON" else "Control 1: OFF"
-        }
-
-        controlSwitch2.setOnClickListener {
-            isControl2On = !isControl2On
-            transcriptionTextView.text = if (isControl2On) "Control 2: ON" else "Control 2: OFF"
-        }
-
-        controlSwitch3.setOnClickListener {
-            isControl3On = !isControl3On
-            transcriptionTextView.text = if (isControl3On) "Control 3: ON" else "Control 3: OFF"
-        }
-
-        controlSwitch4.setOnClickListener {
-            isControl4On = !isControl4On
-            transcriptionTextView.text = if (isControl4On) "Control 4: ON" else "Control 4: OFF"
-        }
+        // Add OnClickListener for each button to toggle its lighted state
+        buttonAir.setOnClickListener { buttonAir.setLighted(!buttonAir.isLighted()) }
+        buttonOil.setOnClickListener { buttonOil.setLighted(!buttonOil.isLighted()) }
+        buttonP1.setOnClickListener { buttonP1.setLighted(!buttonP1.isLighted()) }
+        buttonP2.setOnClickListener { buttonP2.setLighted(!buttonP2.isLighted()) }
+        buttonS1.setOnClickListener { buttonS1.setLighted(!buttonS1.isLighted()) }
+        buttonS2.setOnClickListener { buttonS2.setLighted(!buttonS2.isLighted()) }
+        buttonP3.setOnClickListener { buttonP3.setLighted(!buttonP3.isLighted()) }
+        buttonP4.setOnClickListener { buttonP4.setLighted(!buttonP4.isLighted()) }
+        buttonAutoCruise.setOnClickListener { buttonAutoCruise.setLighted(!buttonAutoCruise.isLighted()) }
+        buttonNormalCruise.setOnClickListener { buttonNormalCruise.setLighted(!buttonNormalCruise.isLighted()) }
     }
 
     @SuppressLint("MissingPermission")
@@ -165,14 +151,14 @@ class MainActivity : ComponentActivity() {
     private fun toggleScannerAnimation(show: Boolean) {
         try {
             if (show) {
-                kittScannerView.visibility = View.VISIBLE
-                kittScannerView.resumeAnimation()
+                kittSpectrumView.visibility = View.VISIBLE
+                kittSpectrumView.startVisualization()
             } else {
-                kittScannerView.stopAnimation()
-                kittScannerView.visibility = View.VISIBLE // Keep visible but stop animation
+                kittSpectrumView.stopVisualization()
+                kittSpectrumView.visibility = View.VISIBLE // Keep visible but stop visualization
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error controlling scanner animation: ${e.message}")
+            Log.e(TAG, "Error controlling spectrum visualization: ${e.message}")
         }
     }
 

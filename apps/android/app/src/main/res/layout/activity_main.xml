@@ -4,20 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#000000"
     tools:context=".MainActivity">
-
-    <TextView
-        android:id="@+id/transcriptionTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:text="Press the button to start listening..."
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
 
     <TextView
         android:id="@+id/sttStatusTextView"
@@ -34,81 +22,141 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-
-    <com.kitt.android.KittScannerView
-        android:id="@+id/kittScannerView"
-        android:layout_width="300dp"
-        android:layout_height="80dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topButtonContainer"
-        app:layout_constraintVertical_bias="0.45" />
-
-    <LinearLayout
-        android:id="@+id/topButtonContainer"
+    <TextView
+        android:id="@+id/transcriptionTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        app:layout_constraintBottom_toTopOf="@+id/kittScannerView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/transcriptionTextView">
-
-        <com.kitt.android.KittButton
-            android:id="@+id/languageSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Language" />
-
-        <com.kitt.android.KittButton
-            android:id="@+id/controlSwitch1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Control 1" />
-
-        <com.kitt.android.KittButton
-            android:id="@+id/controlSwitch2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Control 2" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/bottomButtonContainer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@+id/kittScannerView"
+        android:layout_marginEnd="16dp"
+        android:text="Press the button to start listening..."
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
 
-        <com.kitt.android.KittButton
-            android:id="@+id/talkSwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Talk Mode" />
+    <LinearLayout
+        android:id="@+id/dashboardLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="20dp"
+        app:layout_constraintTop_toBottomOf="@+id/transcriptionTextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <com.kitt.android.KittButton
-            android:id="@+id/controlSwitch3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Control 3" />
+        <LinearLayout
+            android:id="@+id/leftButtonColumn"
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginEnd="20dp">
 
-        <com.kitt.android.KittButton
-            android:id="@+id/controlSwitch4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Control 4" />
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonAir"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="AIR"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFAA00" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonOil"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="OIL"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFAA00" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP1"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="P1"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP2"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="P2"
+                android:backgroundTint="#FF0000" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/centerContent"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <com.kitt.android.KittSpectrumView
+                android:id="@+id/kittSpectrumView"
+                android:layout_width="200dp"
+                android:layout_height="120dp"
+                android:layout_marginBottom="20dp" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonAutoCruise"
+                android:layout_width="120dp"
+                android:layout_height="40dp"
+                android:text="AUTO\nCRUISE"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#FF4500" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonNormalCruise"
+                android:layout_width="120dp"
+                android:layout_height="40dp"
+                android:text="NORMAL\nCRUISE"
+                android:backgroundTint="#333333" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rightButtonColumn"
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="20dp">
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonS1"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="S1"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonS2"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="S2"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP3"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="P3"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP4"
+                android:layout_width="60dp"
+                android:layout_height="40dp"
+                android:text="P4"
+                android:backgroundTint="#FF0000" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

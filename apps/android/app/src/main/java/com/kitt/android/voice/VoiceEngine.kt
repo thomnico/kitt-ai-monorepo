@@ -5,6 +5,9 @@ import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.speech.SpeechRecognizer
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
 import android.util.Log
 import org.vosk.Model
 import org.vosk.Recognizer
@@ -15,6 +18,7 @@ import androidx.annotation.RequiresPermission
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.FileOutputStream
+import android.os.Bundle
 
 // Performance target: Ensure end-to-end latency < 200ms as per monorepo rules
 private const val MAX_LATENCY_MS = 200L
@@ -34,9 +38,11 @@ class VoiceEngine(private val context: Context) {
     private var model: Model? = null
     private var recognizer: Recognizer? = null
     private var recorder: AudioRecord? = null
+    private var speechRecognizer: SpeechRecognizer? = null
     private val modelPath = "${context.filesDir.absolutePath}/models/vosk"
     private var isListening = false
     private var currentModelKey = "en-us"
+    private var useNativeAndroid = false
     private var transcriptionCallback: TranscriptionCallback? = null
 
     /**
@@ -61,84 +67,144 @@ class VoiceEngine(private val context: Context) {
     fun initVoiceEngine(): Boolean {
         val startTime = System.currentTimeMillis()
 
-        // Ensure model directory exists
-        val modelDir = File(modelPath)
-        if (!modelDir.exists()) {
-            Log.i(TAG, "Model directory does not exist: $modelPath, attempting to create and copy from assets")
+        if (useNativeAndroid) {
+            // Initialize native Android speech recognizer
             try {
-                modelDir.mkdirs()
-                // Copy the model from APK assets for offline use
-                copyVoskModelFromAssets()
+                speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+                speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+                    override fun onReadyForSpeech(params: Bundle?) {
+                        Log.i(TAG, "Native Android recognizer ready for speech")
+                    }
+
+                    override fun onBeginningOfSpeech() {
+                        Log.i(TAG, "Speech input started")
+                    }
+
+                    override fun onRmsChanged(rmsdB: Float) {
+                        // RMS change can be used for visualization if needed
+                    }
+
+                    override fun onBufferReceived(buffer: ByteArray?) {
+                        // Not typically used for speech recognition
+                    }
+
+                    override fun onEndOfSpeech() {
+                        Log.i(TAG, "Speech input ended")
+                    }
+
+                    override fun onError(error: Int) {
+                        Log.e(TAG, "Speech recognition error: $error")
+                    }
+
+                    override fun onResults(results: Bundle?) {
+                        val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        if (matches != null && matches.isNotEmpty()) {
+                            val transcription = matches[0]
+                            Log.i(TAG, "Speech recognition result: $transcription")
+                            transcriptionCallback?.onTranscription(transcription)
+                        }
+                    }
+
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        val partialMatches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        if (partialMatches != null && partialMatches.isNotEmpty()) {
+                            val partialTranscription = partialMatches[0]
+                            Log.i(TAG, "Partial speech recognition result: $partialTranscription")
+                            transcriptionCallback?.onTranscription(partialTranscription)
+                        }
+                    }
+
+                    override fun onEvent(eventType: Int, params: Bundle?) {
+                        // Handle any additional events if necessary
+                    }
+                })
+                val initTime = System.currentTimeMillis() - startTime
+                Log.i(TAG, "Native Android voice engine initialized in ${initTime}ms")
+                return true
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to create model directory or copy model from assets: ${e.message}")
+                Log.e(TAG, "Failed to initialize native Android voice engine: ${e.message}")
+                return false
             }
         } else {
-            Log.i(TAG, "Model directory exists: $modelPath")
-            // Check if the directory contains any files
-            val modelFiles = modelDir.listFiles()
-            if (modelFiles == null || modelFiles.isEmpty()) {
-                Log.w(TAG, "Model directory is empty: $modelPath, attempting to copy from assets")
+            // Ensure model directory exists for Vosk
+            val modelDir = File(modelPath)
+            if (!modelDir.exists()) {
+                Log.i(TAG, "Model directory does not exist: $modelPath, attempting to create and copy from assets")
                 try {
+                    modelDir.mkdirs()
+                    // Copy the model from APK assets for offline use
                     copyVoskModelFromAssets()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to copy model from assets: ${e.message}")
+                    Log.e(TAG, "Failed to create model directory or copy model from assets: ${e.message}")
                 }
             } else {
-                Log.i(TAG, "Model directory contains files: $modelPath")
-                // Check if there are zip files in assets that need to be extracted
-                try {
-                    copyVoskModelFromAssets()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to copy or extract model from assets: ${e.message}")
+                Log.i(TAG, "Model directory exists: $modelPath")
+                // Check if the directory contains any files
+                val modelFiles = modelDir.listFiles()
+                if (modelFiles == null || modelFiles.isEmpty()) {
+                    Log.w(TAG, "Model directory is empty: $modelPath, attempting to copy from assets")
+                    try {
+                        copyVoskModelFromAssets()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to copy model from assets: ${e.message}")
+                    }
+                } else {
+                    Log.i(TAG, "Model directory contains files: $modelPath")
+                    // Check if there are zip files in assets that need to be extracted
+                    try {
+                        copyVoskModelFromAssets()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to copy or extract model from assets: ${e.message}")
+                    }
                 }
             }
-        }
 
-        // Check again if model files are present before initialization
-        val finalModelFiles = modelDir.listFiles()
-        if (finalModelFiles == null || finalModelFiles.isEmpty()) {
-            Log.e(TAG, "Model directory is still empty after copy attempt: $modelPath. Cannot initialize voice engine.")
-            return false
-        }
+            // Check again if model files are present before initialization
+            val finalModelFiles = modelDir.listFiles()
+            if (finalModelFiles == null || finalModelFiles.isEmpty()) {
+                Log.e(TAG, "Model directory is still empty after copy attempt: $modelPath. Cannot initialize voice engine.")
+                return false
+            }
 
-        // Check if the files are valid model files (not just zip files or placeholders)
-        var hasValidModel = false
-        for (file in finalModelFiles) {
-            if (!file.name.endsWith(".zip") && file.name != "placeholder_model.txt") {
-                hasValidModel = true
-                break
+            // Check if the files are valid model files (not just zip files or placeholders)
+            var hasValidModel = false
+            for (file in finalModelFiles) {
+                if (!file.name.endsWith(".zip") && file.name != "placeholder_model.txt") {
+                    hasValidModel = true
+                    break
+                }
+            }
+            if (!hasValidModel) {
+                Log.w(TAG, "No direct valid Vosk model files found in $modelPath. Only zip files or placeholder files are present. Attempting initialization anyway as zip files may have been extracted.")
+            }
+
+            // Initialize Vosk with offline-first approach
+            try {
+                // Load the Vosk model based on configuration
+                val configJson = readModelConfig()
+                val models = configJson.getJSONObject("models")
+                val modelConfig = models.optJSONObject(currentModelKey)
+                if (modelConfig != null) {
+                    val modelFileName = modelConfig.optString("path", if (currentModelKey == "en-us") "vosk-model-small-en-us-0.15.zip" else "vosk-model-small-fr-0.22.zip")
+                    val extractedModelPath = "$modelPath/${modelFileName.removeSuffix(".zip")}"
+                    Log.i(TAG, "Loading model: $currentModelKey from $extractedModelPath")
+                    model = Model(extractedModelPath)
+                    recognizer = Recognizer(model, SAMPLE_RATE.toFloat())
+                    val initTime = System.currentTimeMillis() - startTime
+                    if (initTime > MAX_LATENCY_MS) {
+                        Log.w(TAG, "Voice engine initialization exceeded latency target: ${initTime}ms")
+                    }
+                    Log.i(TAG, "Voice engine initialized successfully with Vosk model $currentModelKey in ${initTime}ms")
+                    return true
+                } else {
+                    Log.e(TAG, "Model $currentModelKey not found in configuration")
+                    return false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize voice engine with Vosk: ${e.message}")
+                return false
             }
         }
-        if (!hasValidModel) {
-            Log.w(TAG, "No direct valid Vosk model files found in $modelPath. Only zip files or placeholder files are present. Attempting initialization anyway as zip files may have been extracted.")
-        }
-
-    // Initialize Vosk with offline-first approach
-    try {
-        // Load the Vosk model based on configuration
-        val configJson = readModelConfig()
-        val models = configJson.getJSONObject("models")
-        val modelConfig = models.optJSONObject(currentModelKey)
-        if (modelConfig != null) {
-            val modelFileName = modelConfig.optString("path", if (currentModelKey == "en-us") "vosk-model-small-en-us-0.15.zip" else "vosk-model-small-fr-0.22.zip")
-            val extractedModelPath = "$modelPath/${modelFileName.removeSuffix(".zip")}"
-            Log.i(TAG, "Loading model: $currentModelKey from $extractedModelPath")
-            model = Model(extractedModelPath)
-            recognizer = Recognizer(model, SAMPLE_RATE.toFloat())
-            val initTime = System.currentTimeMillis() - startTime
-            if (initTime > MAX_LATENCY_MS) {
-                Log.w(TAG, "Voice engine initialization exceeded latency target: ${initTime}ms")
-            }
-            Log.i(TAG, "Voice engine initialized successfully with Vosk model $currentModelKey in ${initTime}ms")
-            return true
-        } else {
-            Log.e(TAG, "Model $currentModelKey not found in configuration")
-            return false
-        }
-    } catch (e: Exception) {
-        Log.e(TAG, "Failed to initialize voice engine with Vosk: ${e.message}")
-        return false
-    }
     }
 
     /**
@@ -147,10 +213,10 @@ class VoiceEngine(private val context: Context) {
      */
     fun getEngineStatus(): String {
         Log.i(TAG, "Getting voice engine status")
-        return if (model != null) {
-            "Initialized and ready"
+        return if (useNativeAndroid) {
+            if (speechRecognizer != null) "Initialized with Native Android and ready" else "Not initialized"
         } else {
-            "Not initialized"
+            if (model != null) "Initialized with Vosk and ready" else "Not initialized"
         }
     }
 
@@ -340,36 +406,55 @@ class VoiceEngine(private val context: Context) {
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun startListening(): Boolean {
-        if (recognizer == null) {
-            Log.e(TAG, "Voice engine not initialized")
-            return false
-        }
-
-        try {
-            val audioFormat = AudioFormat.Builder()
-                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                .setSampleRate(SAMPLE_RATE)
-                .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-                .build()
-            val bufferSize = AudioRecord.getMinBufferSize(
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            recorder = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize
-            )
-            recorder?.startRecording()
-            isListening = true
-            Log.i(TAG, "Started listening for voice input")
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start listening: ${e.message}")
-            return false
+        if (useNativeAndroid) {
+            if (speechRecognizer == null) {
+                Log.e(TAG, "Native Android voice engine not initialized")
+                return false
+            }
+            try {
+                val intent = RecognizerIntent.getVoiceDetailsIntent(context)
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true) // Ensure on-device processing
+                speechRecognizer?.startListening(intent)
+                isListening = true
+                Log.i(TAG, "Started listening for voice input with Native Android")
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start listening with Native Android: ${e.message}")
+                return false
+            }
+        } else {
+            if (recognizer == null) {
+                Log.e(TAG, "Vosk voice engine not initialized")
+                return false
+            }
+            try {
+                val audioFormat = AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(SAMPLE_RATE)
+                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                    .build()
+                val bufferSize = AudioRecord.getMinBufferSize(
+                    SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT
+                )
+                recorder = AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    bufferSize
+                )
+                recorder?.startRecording()
+                isListening = true
+                Log.i(TAG, "Started listening for voice input with Vosk")
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start listening with Vosk: ${e.message}")
+                return false
+            }
         }
     }
 
@@ -380,8 +465,8 @@ class VoiceEngine(private val context: Context) {
     fun setModel(modelKey: String) {
         Log.i(TAG, "Setting model to $modelKey")
         currentModelKey = modelKey
-        // Reinitialize the voice engine with the new model
-        if (model != null) {
+        // Reinitialize the voice engine with the new model if using Vosk
+        if (!useNativeAndroid && model != null) {
             model = null
             recognizer = null
             initVoiceEngine()
@@ -389,23 +474,49 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
+     * Switch between Vosk and Native Android voice processing.
+     * @param useNative Boolean indicating whether to use Native Android processing.
+     */
+    fun switchToNativeAndroid(useNative: Boolean) {
+        Log.i(TAG, "Switching to ${if (useNative) "Native Android" else "Vosk"} voice processing")
+        useNativeAndroid = useNative
+        // Clean up existing resources
+        if (useNative) {
+            model?.close()
+            model = null
+            recognizer = null
+        } else {
+            speechRecognizer?.destroy()
+            speechRecognizer = null
+        }
+        // Reinitialize with the new setting
+        initVoiceEngine()
+    }
+
+    /**
      * Stop listening for voice input.
      * @return The final processed result as a String.
      */
     fun stopListening(): String {
-        if (recorder == null || !isListening) {
+        if (!isListening) {
             Log.w(TAG, "Not currently listening")
             return "Error: Not listening"
         }
 
         isListening = false
-        recorder?.stop()
-        recorder?.release()
-        recorder = null
-        val finalResult = recognizer?.result ?: "{}"
-        Log.i(TAG, "Stopped listening for voice input")
-        transcriptionCallback?.onTranscription(finalResult)
-        return finalResult
+        if (useNativeAndroid) {
+            speechRecognizer?.stopListening()
+            Log.i(TAG, "Stopped listening for voice input with Native Android")
+            return "Stopped Native Android listening"
+        } else {
+            recorder?.stop()
+            recorder?.release()
+            recorder = null
+            val finalResult = recognizer?.result ?: "{}"
+            Log.i(TAG, "Stopped listening for voice input with Vosk")
+            transcriptionCallback?.onTranscription(finalResult)
+            return finalResult
+        }
     }
 
     /**
@@ -413,28 +524,37 @@ class VoiceEngine(private val context: Context) {
      * @return The partial result as a String if available, empty string otherwise.
      */
     fun processVoiceInput(): String {
-        if (recorder == null || !isListening || recognizer == null) {
-            Log.e(TAG, "Voice engine not initialized or not listening")
+        if (useNativeAndroid) {
+            if (!isListening || speechRecognizer == null) {
+                Log.e(TAG, "Native Android voice engine not initialized or not listening")
+                return ""
+            }
+            // Native Android processing is handled via callbacks in RecognitionListener
+            return ""
+        } else {
+            if (recorder == null || !isListening || recognizer == null) {
+                Log.e(TAG, "Vosk voice engine not initialized or not listening")
+                return ""
+            }
+
+            val startTime = System.currentTimeMillis()
+            val buffer = ShortArray(BUFFER_SIZE)
+            val read = recorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
+            if (read > 0) {
+                recognizer?.acceptWaveForm(buffer, read)
+                val partialResult = recognizer?.partialResult ?: "{}"
+                val processTime = System.currentTimeMillis() - startTime
+                if (processTime > MAX_LATENCY_MS) {
+                    Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
+                }
+                Log.i(TAG, "Partial voice input processed in ${processTime}ms")
+                if (partialResult.isNotEmpty()) {
+                    transcriptionCallback?.onTranscription(partialResult)
+                }
+                return partialResult
+            }
             return ""
         }
-
-        val startTime = System.currentTimeMillis()
-        val buffer = ShortArray(BUFFER_SIZE)
-        val read = recorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
-        if (read > 0) {
-            recognizer?.acceptWaveForm(buffer, read)
-            val partialResult = recognizer?.partialResult ?: "{}"
-            val processTime = System.currentTimeMillis() - startTime
-            if (processTime > MAX_LATENCY_MS) {
-                Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
-            }
-            Log.i(TAG, "Partial voice input processed in ${processTime}ms")
-            if (partialResult.isNotEmpty()) {
-                transcriptionCallback?.onTranscription(partialResult)
-            }
-            return partialResult
-        }
-        return ""
     }
 
 }

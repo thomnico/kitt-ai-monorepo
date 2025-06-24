@@ -14,102 +14,111 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import androidx.core.content.ContextCompat;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
 
 /**
- * Real-time audio spectrum analyzer with KITT-style visualization
+ * KITT-style spectrum analyzer with symmetric LED bars matching the original dashboard
  */
 public class KittSpectrumView extends View {
     private static final String TAG = "KittSpectrumView";
-    private Paint barPaint;
-    private float[] magnitudes;
-    private int numBars = 32;
-    private float barWidth;
+    private static final int TOTAL_COLUMNS = 7; // Match the image - 7 columns total
+    private static final int MAX_SEGMENTS = 6; // Maximum segments per column
+    private Paint ledPaint;
+    private Paint offLedPaint;
+    private int[][] columnHeights = new int[TOTAL_COLUMNS][1]; // Current height for each column
     private AudioRecord audioRecord;
     private boolean isRecording = false;
     private Thread recordingThread;
-    private FastFourierTransformer fft;
     private int sampleRate = 44100;
     private int bufferSize;
-    
+
     public KittSpectrumView(Context context) {
         super(context);
         init();
     }
-    
+
     public KittSpectrumView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
-    
+
     public KittSpectrumView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
-    
+
     private void init() {
-        barPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        magnitudes = new float[numBars];
-        fft = new FastFourierTransformer(DftNormalization.STANDARD);
-        setBackgroundColor(Color.parseColor("#0a0a0a"));
-        setLayerType(LAYER_TYPE_SOFTWARE, null);
+        ledPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ledPaint.setColor(Color.RED);
         
+        offLedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        offLedPaint.setColor(Color.parseColor("#330000")); // Very dark red for "off" LEDs
+        
+        setBackgroundColor(Color.parseColor("#000000"));
+
         bufferSize = AudioRecord.getMinBufferSize(
             sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT
         );
+        
+        // Initialize with some demo pattern
+        initDemoPattern();
     }
     
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        barWidth = (float) w / numBars;
+    private void initDemoPattern() {
+        // Create a symmetric pattern like in the image
+        columnHeights[0][0] = 2; // Left outer
+        columnHeights[1][0] = 4; // Left middle
+        columnHeights[2][0] = 5; // Left inner
+        columnHeights[3][0] = 6; // Center (tallest)
+        columnHeights[4][0] = 5; // Right inner
+        columnHeights[5][0] = 4; // Right middle
+        columnHeights[6][0] = 2; // Right outer
     }
-    
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        
+
+        int width = getWidth();
         int height = getHeight();
-        float maxHeight = height - 30;
         
-        for (int i = 0; i < numBars; i++) {
-            float x = i * barWidth;
-            float barHeight = magnitudes[i] * maxHeight;
-            
-            // KITT-style color gradient (red to yellow based on intensity)
-            float intensity = magnitudes[i];
-            int red = 255;
-            int green = (int) (255 * Math.min(1.0f, intensity * 2));
-            int blue = 0;
-            
-            int color = Color.rgb(red, green, blue);
-            barPaint.setColor(color);
-            
-            // Add glow effect
-            float shadowRadius = 10 * intensity;
-            barPaint.setShadowLayer(shadowRadius, 0, 0, color);
-            
-            RectF barRect = new RectF(
-                x + 2,
-                height - barHeight - 15,
-                x + barWidth - 2,
-                height - 15
-            );
-            canvas.drawRoundRect(barRect, 3, 3, barPaint);
+        if (width == 0 || height == 0) return;
+
+        float columnWidth = (float) width / TOTAL_COLUMNS;
+        float segmentHeight = (float) height / MAX_SEGMENTS;
+        float ledWidth = columnWidth * 0.7f; // 70% of column width for LED
+        float ledHeight = segmentHeight * 0.8f; // 80% of segment height for LED
+        float ledSpacing = columnWidth * 0.15f; // Spacing between LEDs
+
+        for (int col = 0; col < TOTAL_COLUMNS; col++) {
+            float columnLeft = col * columnWidth + ledSpacing;
+            int activeSegments = columnHeights[col][0];
+
+            for (int seg = 0; seg < MAX_SEGMENTS; seg++) {
+                float segmentTop = height - (seg + 1) * segmentHeight + (segmentHeight - ledHeight) / 2;
+                float segmentBottom = segmentTop + ledHeight;
+
+                RectF ledRect = new RectF(columnLeft, segmentTop, columnLeft + ledWidth, segmentBottom);
+
+                if (seg < activeSegments) {
+                    // LED is "on" - bright red
+                    canvas.drawRoundRect(ledRect, 3, 3, ledPaint);
+                } else {
+                    // LED is "off" - dark red outline
+                    canvas.drawRoundRect(ledRect, 3, 3, offLedPaint);
+                }
+            }
         }
     }
-    
+
     public void startVisualization() {
         if (!isRecording && checkAudioPermission()) {
             isRecording = true;
             startAudioCapture();
         }
     }
-    
+
     public void stopVisualization() {
         isRecording = false;
         if (audioRecord != null) {
@@ -117,7 +126,7 @@ public class KittSpectrumView extends View {
                 audioRecord.stop();
                 audioRecord.release();
             } catch (Exception e) {
-                // Handle cleanup errors gracefully
+                Log.e(TAG, "Error stopping audio record", e);
             }
             audioRecord = null;
         }
@@ -125,18 +134,18 @@ public class KittSpectrumView extends View {
             recordingThread.interrupt();
         }
     }
-    
+
     private boolean checkAudioPermission() {
-        return ContextCompat.checkSelfPermission(getContext(), 
+        return ContextCompat.checkSelfPermission(getContext(),
             Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
-    
+
     private void startAudioCapture() {
         if (!checkAudioPermission()) {
-            Log.w(TAG, "Audio permission not granted, cannot start audio capture");
+            Log.w(TAG, "Audio permission not granted");
             return;
         }
-        
+
         try {
             audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
@@ -145,79 +154,75 @@ public class KittSpectrumView extends View {
                 AudioFormat.ENCODING_PCM_16BIT,
                 bufferSize * 2
             );
-            
+
             if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 return;
             }
-            
+
             audioRecord.startRecording();
-            
+
             recordingThread = new Thread(() -> {
                 short[] buffer = new short[1024];
-                double[] fftBuffer = new double[1024];
-                
-                while (isRecording && audioRecord != null && 
+
+                while (isRecording && audioRecord != null &&
                        audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     try {
                         int read = audioRecord.read(buffer, 0, buffer.length);
-                        
+
                         if (read > 0) {
-                            // Convert to double for FFT
-                            for (int i = 0; i < buffer.length; i++) {
-                                fftBuffer[i] = buffer[i] / 32768.0;
-                            }
-                            
-                            // Perform FFT
-                            try {
-                                org.apache.commons.math3.complex.Complex[] fftResult = 
-                                    fft.transform(fftBuffer, TransformType.FORWARD);
-                                updateMagnitudes(fftResult);
-                            } catch (Exception e) {
-                                // Handle FFT errors gracefully
-                            }
-                            
-                            // Update UI on main thread
+                            processAudioData(buffer, read);
                             post(this::invalidate);
                         }
-                        
+
                         Thread.sleep(50); // ~20 FPS update rate
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         break;
                     } catch (Exception e) {
-                        // Handle other errors gracefully
+                        Log.e(TAG, "Error in audio processing", e);
                         break;
                     }
                 }
             });
             recordingThread.start();
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error starting audio capture", e);
         }
     }
-    
-    private void updateMagnitudes(org.apache.commons.math3.complex.Complex[] fftData) {
-        int step = fftData.length / 2 / numBars;
+
+    private void processAudioData(short[] buffer, int length) {
+        // Calculate RMS for the entire buffer
+        double sum = 0;
+        for (int i = 0; i < length; i++) {
+            sum += buffer[i] * buffer[i];
+        }
+        float rms = (float) Math.sqrt(sum / length);
         
-        for (int i = 0; i < numBars; i++) {
-            double sum = 0;
-            int startIndex = i * step;
-            int endIndex = Math.min((i + 1) * step, fftData.length / 2);
-            
-            for (int j = startIndex; j < endIndex; j++) {
-                if (j < fftData.length) {
-                    double magnitude = fftData[j].abs();
-                    sum += magnitude;
-                }
-            }
-            
-            float avgMagnitude = (float) (sum / (endIndex - startIndex));
-            
-            // Smooth the values and normalize
-            magnitudes[i] = (magnitudes[i] * 0.7f) + (Math.min(1.0f, avgMagnitude * 15) * 0.3f);
-        }
+        // Normalize to 0-1 range
+        float normalizedLevel = Math.min(1.0f, rms / 10000.0f);
+        
+        // Convert to segment count (0-6)
+        int centerHeight = Math.round(normalizedLevel * MAX_SEGMENTS);
+        
+        // Create symmetric pattern
+        columnHeights[3][0] = centerHeight; // Center column
+        
+        // Inner columns (slightly lower)
+        int innerHeight = Math.max(0, centerHeight - 1);
+        columnHeights[2][0] = innerHeight; // Left inner
+        columnHeights[4][0] = innerHeight; // Right inner
+        
+        // Middle columns (even lower)
+        int middleHeight = Math.max(0, centerHeight - 2);
+        columnHeights[1][0] = middleHeight; // Left middle
+        columnHeights[5][0] = middleHeight; // Right middle
+        
+        // Outer columns (lowest)
+        int outerHeight = Math.max(0, centerHeight - 3);
+        columnHeights[0][0] = outerHeight; // Left outer
+        columnHeights[6][0] = outerHeight; // Right outer
     }
-    
+
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();

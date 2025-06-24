@@ -23,6 +23,7 @@ public class KittButton extends View {
     private int buttonColor = Color.RED;
     private boolean isPressed = false;
     private boolean isGlowing = false;
+    private boolean isLighted = false; // Added state variable
     private ValueAnimator glowAnimator;
     private float glowIntensity = 0.3f;
     
@@ -47,10 +48,10 @@ public class KittButton extends View {
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         
         // Configure text paint with smaller size for better fit
-        textPaint.setColor(Color.WHITE);
+        textPaint.setColor(Color.BLACK);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(18); // Reduced from 48 for better fit
-        textPaint.setTypeface(Typeface.create("monospace", Typeface.BOLD));
+        textPaint.setTextSize(14); // Smaller text for compact buttons
+        textPaint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         
         // Configure border paint
         borderPaint.setStyle(Paint.Style.STROKE);
@@ -97,37 +98,51 @@ public class KittButton extends View {
         // Draw button background
         backgroundPaint.setColor(buttonColor);
         
-        if (isGlowing || isPressed) {
-            float shadowRadius = 6 * glowIntensity; // Reduced shadow
-            backgroundPaint.setShadowLayer(shadowRadius, 0, 0, buttonColor);
-            backgroundPaint.setAlpha((int) (255 * glowIntensity));
+        if (isLighted) {
+            // "Lighted on" state: bright and solid
+            backgroundPaint.setShadowLayer(0, 0, 0, buttonColor);
+            backgroundPaint.setAlpha(255);
         } else {
-            backgroundPaint.setShadowLayer(3, 0, 0, buttonColor); // Reduced shadow
-            backgroundPaint.setAlpha(180);
+            // "Lighted off" state: very dim
+            backgroundPaint.setShadowLayer(0, 0, 0, buttonColor);
+            backgroundPaint.setAlpha(30); // Very dim when off
         }
-        
-        RectF rect = new RectF(padding, padding, width - padding, height - padding);
-        canvas.drawRoundRect(rect, 6, 6, backgroundPaint); // Reduced corner radius
-        
-        // Draw border
+
         if (isPressed) {
-            borderPaint.setColor(Color.YELLOW);
-            borderPaint.setStrokeWidth(3);
-        } else {
-            borderPaint.setColor(Color.WHITE);
-            borderPaint.setStrokeWidth(2);
+            // Pressed state: slightly brighter
+            backgroundPaint.setShadowLayer(0, 0, 0, buttonColor);
+            backgroundPaint.setAlpha(200);
         }
-        canvas.drawRoundRect(rect, 6, 6, borderPaint);
+
+        RectF rect = new RectF(padding, padding, width - padding, height - padding);
+        canvas.drawRoundRect(rect, 6, 6, backgroundPaint);
+        
+        // Draw subtle border only when lighted
+        if (isLighted || isPressed) {
+            borderPaint.setColor(Color.parseColor("#FFFFFF"));
+            borderPaint.setStrokeWidth(1);
+            canvas.drawRoundRect(rect, 6, 6, borderPaint);
+        }
         
         // Draw text if it exists
         if (text != null && !text.isEmpty()) {
-            // Dynamically adjust text size based on button dimensions
-            float maxTextSize = Math.min(height * 0.5f, width * 0.2f);
-            float finalTextSize = Math.min(18, maxTextSize);
-            textPaint.setTextSize(finalTextSize);
+            // Set text color based on state
+            if (isLighted) {
+                textPaint.setColor(Color.BLACK);
+            } else {
+                textPaint.setColor(Color.parseColor("#666666"));
+            }
             
-            float textY = height / 2f + textPaint.getTextSize() / 3f;
-            canvas.drawText(text, width / 2f, textY, textPaint);
+            // Handle multi-line text
+            String[] lines = text.split("\n");
+            float lineHeight = textPaint.getTextSize() + 2;
+            float totalTextHeight = lines.length * lineHeight;
+            float startY = (height - totalTextHeight) / 2 + textPaint.getTextSize();
+            
+            for (int i = 0; i < lines.length; i++) {
+                float y = startY + (i * lineHeight);
+                canvas.drawText(lines[i], width / 2f, y, textPaint);
+            }
         }
     }
     
@@ -156,10 +171,6 @@ public class KittButton extends View {
     
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // Set reasonable minimum dimensions for the button
-        int minWidth = 50;  // Reduced from 200
-        int minHeight = 30; // Reduced from 80
-        
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
@@ -167,22 +178,17 @@ public class KittButton extends View {
         
         int width, height;
         
-        // Handle width measurement
+        // Use exact dimensions if specified, otherwise use defaults
         if (widthMode == MeasureSpec.EXACTLY) {
             width = widthSize;
-        } else if (widthMode == MeasureSpec.AT_MOST) {
-            width = Math.min(minWidth, widthSize);
         } else {
-            width = minWidth;
+            width = 60; // Default width
         }
         
-        // Handle height measurement
         if (heightMode == MeasureSpec.EXACTLY) {
             height = heightSize;
-        } else if (heightMode == MeasureSpec.AT_MOST) {
-            height = Math.min(minHeight, heightSize);
         } else {
-            height = minHeight;
+            height = 40; // Default height
         }
         
         setMeasuredDimension(width, height);
@@ -212,5 +218,14 @@ public class KittButton extends View {
         glowAnimator.cancel();
         glowIntensity = 0.3f;
         invalidate();
+    }
+
+    public void setLighted(boolean lighted) {
+        isLighted = lighted;
+        invalidate();
+    }
+
+    public boolean isLighted() {
+        return isLighted;
     }
 }
