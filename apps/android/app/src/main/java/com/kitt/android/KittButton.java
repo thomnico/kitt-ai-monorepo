@@ -47,10 +47,10 @@ public class KittButton extends View {
         borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         
-        // Configure text paint with smaller size for better fit
+        // Configure text paint with larger size for better visibility
         textPaint.setColor(Color.BLACK);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(14); // Smaller text for compact buttons
+        textPaint.setTextSize(18); // Larger text for better readability
         textPaint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         
         // Configure border paint
@@ -178,17 +178,17 @@ public class KittButton extends View {
         
         int width, height;
         
-        // Use exact dimensions if specified, otherwise use defaults
+        // Use exact dimensions if specified, otherwise use larger defaults
         if (widthMode == MeasureSpec.EXACTLY) {
             width = widthSize;
         } else {
-            width = 60; // Default width
+            width = 80; // Larger default width
         }
         
         if (heightMode == MeasureSpec.EXACTLY) {
             height = heightSize;
         } else {
-            height = 40; // Default height
+            height = 50; // Larger default height
         }
         
         setMeasuredDimension(width, height);

@@ -58,32 +58,32 @@
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonAir"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
-                android:text="AIR"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="EN"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FFAA00" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonOil"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
-                android:text="OIL"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="VOSK"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FFAA00" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonP1"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="P1"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FF0000" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonP2"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="P2"
                 android:backgroundTint="#FF0000" />
         </LinearLayout>
@@ -104,16 +104,16 @@
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonAutoCruise"
-                android:layout_width="120dp"
-                android:layout_height="40dp"
+                android:layout_width="140dp"
+                android:layout_height="50dp"
                 android:text="AUTO\nCRUISE"
                 android:layout_marginBottom="8dp"
                 android:backgroundTint="#FF4500" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonNormalCruise"
-                android:layout_width="120dp"
-                android:layout_height="40dp"
+                android:layout_width="140dp"
+                android:layout_height="50dp"
                 android:text="NORMAL\nCRUISE"
                 android:backgroundTint="#333333" />
         </LinearLayout>
@@ -128,32 +128,32 @@
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonS1"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="S1"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FF0000" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonS2"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="S2"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FF0000" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonP3"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="P3"
                 android:layout_marginBottom="12dp"
                 android:backgroundTint="#FF0000" />
 
             <com.kitt.android.KittButton
                 android:id="@+id/buttonP4"
-                android:layout_width="60dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
                 android:text="P4"
                 android:backgroundTint="#FF0000" />
         </LinearLayout>

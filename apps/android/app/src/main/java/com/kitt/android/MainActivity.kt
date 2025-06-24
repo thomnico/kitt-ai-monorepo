@@ -75,8 +75,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupSwitchListeners() {
-        val buttonAir: KittButton = findViewById(R.id.buttonAir)
-        val buttonOil: KittButton = findViewById(R.id.buttonOil)
+        val buttonLanguage: KittButton = findViewById(R.id.buttonAir) // Language switch button
+        val buttonModel: KittButton = findViewById(R.id.buttonOil) // Model switch button
         val buttonP1: KittButton = findViewById(R.id.buttonP1)
         val buttonP2: KittButton = findViewById(R.id.buttonP2)
         val buttonS1: KittButton = findViewById(R.id.buttonS1)
@@ -86,22 +86,33 @@ class MainActivity : ComponentActivity() {
         val buttonAutoCruise: KittButton = findViewById(R.id.buttonAutoCruise)
         val buttonNormalCruise: KittButton = findViewById(R.id.buttonNormalCruise)
 
-        // Example of how to use the setLighted method
-        // You would add logic here to determine when to set a button as lighted
-        buttonAir.setLighted(true)
-        buttonOil.setLighted(false)
-        buttonP1.setLighted(true)
+        // Initialize button states based on current settings
+        updateLanguageButton(buttonLanguage)
+        updateModelButton(buttonModel)
+        
+        // Set other buttons to default states
+        buttonP1.setLighted(false)
         buttonP2.setLighted(false)
-        buttonS1.setLighted(true)
+        buttonS1.setLighted(false)
         buttonS2.setLighted(false)
-        buttonP3.setLighted(true)
+        buttonP3.setLighted(false)
         buttonP4.setLighted(false)
-        buttonAutoCruise.setLighted(true)
+        buttonAutoCruise.setLighted(false)
         buttonNormalCruise.setLighted(false)
 
-        // Add OnClickListener for each button to toggle its lighted state
-        buttonAir.setOnClickListener { buttonAir.setLighted(!buttonAir.isLighted()) }
-        buttonOil.setOnClickListener { buttonOil.setLighted(!buttonOil.isLighted()) }
+        // Language switch functionality
+        buttonLanguage.setOnClickListener { 
+            switchLanguage()
+            updateLanguageButton(buttonLanguage)
+        }
+        
+        // Model switch functionality
+        buttonModel.setOnClickListener { 
+            switchModel()
+            updateModelButton(buttonModel)
+        }
+        
+        // Other buttons toggle their lighted state
         buttonP1.setOnClickListener { buttonP1.setLighted(!buttonP1.isLighted()) }
         buttonP2.setOnClickListener { buttonP2.setLighted(!buttonP2.isLighted()) }
         buttonS1.setOnClickListener { buttonS1.setLighted(!buttonS1.isLighted()) }
@@ -163,13 +174,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateSttStatus() {
-        val sttStatus = if (isListening) getString(R.string.stt_status_listening) else getString(R.string.stt_status_not_listening)
-        val languageText = if (currentLanguage == "fr-FR") getString(R.string.language_french) else getString(R.string.language_english)
-        val gpuStatus = getString(R.string.gpu_status)
-        val ramStatus = getString(R.string.ram_status)
-        val sttEngine = getString(R.string.stt_engine)
-        val ttsEngine = getString(R.string.tts_engine)
-        sttStatusTextView.text = getString(R.string.stt_status_format, sttEngine, ttsEngine, languageText, sttStatus, interruptionStatus, gpuStatus, ramStatus)
+        val sttStatus = if (isListening) "🟢 LISTENING" else "🔴 STOPPED"
+        val languageText = if (currentLanguage == "fr-FR") "🇫🇷 FRENCH" else "🇺🇸 ENGLISH"
+        val engineText = "🤖 ${voiceEngine.getCurrentEngine()}"
+        val gpuStatus = "⚡ GPU: ACTIVE"
+        val ramStatus = "💾 RAM: 512MB"
+        
+        val statusText = """
+            $engineText | $languageText | $sttStatus
+            $gpuStatus | $ramStatus | 🎯 KITT v2.0
+        """.trimIndent()
+        
+        sttStatusTextView.text = statusText
     }
 
     private fun checkPermissionsAndStartListening() {
@@ -217,6 +233,53 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "Voice feedback: $response")
         interruptionStatus = "Not Speaking"
         updateSttStatus()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun switchLanguage() {
+        currentLanguage = if (currentLanguage == "en-US") "fr-FR" else "en-US"
+        Log.i(TAG, "Language switched to: $currentLanguage")
+        
+        // Set the language in the voice engine
+        voiceEngine.setLanguage(currentLanguage)
+        
+        // Restart voice engine with new language if currently listening
+        if (isListening) {
+            voiceEngine.stopListening()
+            voiceEngine.startListening()
+        }
+        updateSttStatus()
+    }
+    
+    @SuppressLint("MissingPermission")
+    private fun switchModel() {
+        // Toggle between VOSK and Android local STT
+        val currentEngine = voiceEngine.getCurrentEngine()
+        val newEngine = if (currentEngine == "VOSK") "ANDROID" else "VOSK"
+        
+        Log.i(TAG, "Model switched to: $newEngine")
+        
+        // Restart voice engine with new model
+        if (isListening) {
+            voiceEngine.stopListening()
+        }
+        voiceEngine.switchEngine(newEngine)
+        if (isListening) {
+            voiceEngine.startListening()
+        }
+        updateSttStatus()
+    }
+    
+    private fun updateLanguageButton(button: KittButton) {
+        val languageText = if (currentLanguage == "en-US") "EN" else "FR"
+        button.setText(languageText)
+        button.setLighted(true) // Always lighted to show current state
+    }
+    
+    private fun updateModelButton(button: KittButton) {
+        val modelText = voiceEngine.getCurrentEngine()
+        button.setText(modelText)
+        button.setLighted(true) // Always lighted to show current state
     }
 
     override fun onDestroy() {

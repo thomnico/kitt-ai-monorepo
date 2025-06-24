@@ -42,6 +42,7 @@ class VoiceEngine(private val context: Context) {
     private val modelPath = "${context.filesDir.absolutePath}/models/vosk"
     private var isListening = false
     private var currentModelKey = "en-us"
+    private var currentLanguage = "en-US"
     private var useNativeAndroid = false
     private var transcriptionCallback: TranscriptionCallback? = null
 
@@ -412,13 +413,16 @@ class VoiceEngine(private val context: Context) {
                 return false
             }
             try {
-                val intent = RecognizerIntent.getVoiceDetailsIntent(context)
+                val intent = android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 intent.putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true) // Ensure on-device processing
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage) // Set the language
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, currentLanguage)
+                intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, currentLanguage)
                 speechRecognizer?.startListening(intent)
                 isListening = true
-                Log.i(TAG, "Started listening for voice input with Native Android")
+                Log.i(TAG, "Started listening for voice input with Native Android in language: $currentLanguage")
                 return true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start listening with Native Android: ${e.message}")
@@ -467,9 +471,30 @@ class VoiceEngine(private val context: Context) {
         currentModelKey = modelKey
         // Reinitialize the voice engine with the new model if using Vosk
         if (!useNativeAndroid && model != null) {
+            model?.close()
             model = null
             recognizer = null
             initVoiceEngine()
+        }
+    }
+    
+    /**
+     * Set the language for voice recognition.
+     * @param language The language code (e.g., "en-US" or "fr-FR").
+     */
+    fun setLanguage(language: String) {
+        Log.i(TAG, "Setting language to $language")
+        currentLanguage = language
+        if (useNativeAndroid) {
+            // For Android STT, we just store the language and use it when starting listening
+            Log.i(TAG, "Language set for Android STT: $language")
+        } else {
+            // For Vosk, convert to model key
+            val modelKey = when (language) {
+                "fr-FR" -> "fr"
+                else -> "en-us"
+            }
+            setModel(modelKey)
         }
     }
 
@@ -555,6 +580,23 @@ class VoiceEngine(private val context: Context) {
             }
             return ""
         }
+    }
+
+    /**
+     * Get the current engine being used.
+     * @return String indicating the current engine ("VOSK" or "ANDROID").
+     */
+    fun getCurrentEngine(): String {
+        return if (useNativeAndroid) "ANDROID" else "VOSK"
+    }
+
+    /**
+     * Switch between engines.
+     * @param engine The engine to switch to ("VOSK" or "ANDROID").
+     */
+    fun switchEngine(engine: String) {
+        val useNative = engine.uppercase() == "ANDROID"
+        switchToNativeAndroid(useNative)
     }
 
 }
