@@ -48,9 +48,9 @@ public class KittButton extends View {
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         
         // Configure text paint with larger size for better visibility
-        textPaint.setColor(Color.BLACK);
+        textPaint.setColor(Color.WHITE);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(18); // Larger text for better readability
+        textPaint.setTextSize(36); // 2x larger text for better readability
         textPaint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         
         // Configure border paint
@@ -128,9 +128,9 @@ public class KittButton extends View {
         if (text != null && !text.isEmpty()) {
             // Set text color based on state
             if (isLighted) {
-                textPaint.setColor(Color.BLACK);
+                textPaint.setColor(Color.WHITE);
             } else {
-                textPaint.setColor(Color.parseColor("#666666"));
+                textPaint.setColor(Color.parseColor("#AAAAAA"));
             }
             
             // Handle multi-line text

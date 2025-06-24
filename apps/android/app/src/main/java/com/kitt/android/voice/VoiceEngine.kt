@@ -410,6 +410,7 @@ class VoiceEngine(private val context: Context) {
         if (useNativeAndroid) {
             if (speechRecognizer == null) {
                 Log.e(TAG, "Native Android voice engine not initialized")
+                transcriptionCallback?.onTranscription("Error: Android STT engine not initialized")
                 return false
             }
             try {
@@ -426,11 +427,13 @@ class VoiceEngine(private val context: Context) {
                 return true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start listening with Native Android: ${e.message}")
+                transcriptionCallback?.onTranscription("Error: Failed to start Android STT - ${e.message}")
                 return false
             }
         } else {
             if (recognizer == null) {
                 Log.e(TAG, "Vosk voice engine not initialized")
+                transcriptionCallback?.onTranscription("Error: VOSK engine not initialized")
                 return false
             }
             try {
@@ -457,6 +460,7 @@ class VoiceEngine(private val context: Context) {
                 return true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start listening with Vosk: ${e.message}")
+                transcriptionCallback?.onTranscription("Error: Failed to start VOSK - ${e.message}")
                 return false
             }
         }
@@ -515,7 +519,11 @@ class VoiceEngine(private val context: Context) {
             speechRecognizer = null
         }
         // Reinitialize with the new setting
-        initVoiceEngine()
+        if (!initVoiceEngine()) {
+            transcriptionCallback?.onTranscription("Error: Failed to initialize ${if (useNative) "Android STT" else "VOSK"} engine")
+        }
+        // Ensure language is set correctly for the new engine
+        setLanguage(currentLanguage)
     }
 
     /**
