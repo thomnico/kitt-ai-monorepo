@@ -24,6 +24,19 @@
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-    </application>
+    <service
+        android:name=".KittCarAppService"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="androidx.car.app.action.CAR_APP" />
+        </intent-filter>
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
+        <meta-data
+            android:name="androidx.car.app.category"
+            android:value="io" />
+    </service>
+</application>
 
 </manifest>
