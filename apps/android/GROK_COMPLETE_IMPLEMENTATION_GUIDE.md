@@ -12,7 +12,7 @@ This document provides Grok with everything needed to implement the complete KIT
 
 ## Project Structure
 
-```
+```plaintext
 apps/android/app/src/main/java/com/kitt/android/
 ├── KittActivity.java           # Main activity
 ├── KittDashboardView.java      # Main container (NEEDS FIXING)
@@ -404,16 +404,19 @@ public class KittActivity extends AppCompatActivity {
 ## Implementation Checklist for Grok
 
 ### Phase 1: Fix Critical Issues ⚠️
+
 - [ ] Replace KittDashboardView.java with corrected version (fixes 80+ compilation errors)
 - [ ] Verify all imports are correct
 - [ ] Test basic compilation
 
 ### Phase 2: Integration ✅
+
 - [ ] Update VoiceCommandProcessor.kt with button command handling
 - [ ] Complete KittActivity.java integration
 - [ ] Verify activity_kitt.xml layout is correct
 
 ### Phase 3: Testing 🧪
+
 - [ ] Test button clicks (manual)
 - [ ] Test scanner animation
 - [ ] Test spectrum analyzer (requires audio permission)
@@ -421,6 +424,7 @@ public class KittActivity extends AppCompatActivity {
 - [ ] Test full-screen immersive mode
 
 ### Phase 4: Polish ✨
+
 - [ ] Add startup animation sequence
 - [ ] Add error handling for edge cases
 - [ ] Optimize performance
@@ -429,7 +433,7 @@ public class KittActivity extends AppCompatActivity {
 
 The completed app will display:
 
-```
+```plaintext
 
 ```
 
@@ -441,6 +445,7 @@ The completed app will display:
 ## Voice Commands
 
 Users can say:
+
 - "Select language" → Presses LANG button
 - "Check voice model" → Presses VOSK button  
 - "Program one" → Presses P1 button

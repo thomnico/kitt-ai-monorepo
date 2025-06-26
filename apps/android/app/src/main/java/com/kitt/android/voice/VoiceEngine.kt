@@ -151,11 +151,18 @@ class VoiceEngine(private val context: Context) {
                     }
                 } else {
                     Log.i(TAG, "Model directory contains files: $modelPath")
-                    // Check if there are zip files in assets that need to be extracted
-                    try {
-                        copyVoskModelFromAssets()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to copy or extract model from assets: ${e.message}")
+                    // Only extract if necessary (e.g., check for specific model folders)
+                    val expectedModelFolderEn = File("$modelPath/vosk-model-small-en-us-0.15")
+                    val expectedModelFolderFr = File("$modelPath/vosk-model-small-fr-0.22")
+                    if (!expectedModelFolderEn.exists() || !expectedModelFolderFr.exists()) {
+                        Log.i(TAG, "Not all expected model folders found, extracting models from assets")
+                        try {
+                            copyVoskModelFromAssets()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to copy or extract model from assets: ${e.message}")
+                        }
+                    } else {
+                        Log.i(TAG, "Expected model folders found, skipping extraction")
                     }
                 }
             }

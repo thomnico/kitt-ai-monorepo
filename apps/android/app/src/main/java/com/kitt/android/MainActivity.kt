@@ -55,8 +55,11 @@ class MainActivity : ComponentActivity() {
         transcriptionTextView = findViewById(R.id.transcriptionTextView)
         sttStatusTextView = findViewById(R.id.sttStatusTextView)
 
-        voiceEngine = VoiceEngine(this)
-        voiceEngine.initVoiceEngine()
+        // Use a singleton or persistent instance for VoiceEngine to avoid re-initialization
+        if (!::voiceEngine.isInitialized) {
+            voiceEngine = VoiceEngine(this)
+            voiceEngine.initVoiceEngine()
+        }
         voiceEngine.setTranscriptionCallback(object : VoiceEngine.TranscriptionCallback {
             override fun onTranscription(transcription: String) {
             runOnUiThread {
@@ -199,6 +202,7 @@ class MainActivity : ComponentActivity() {
             }
             else -> {
                 // Request permission
+                Log.w(TAG, "Audio permission not granted, requesting permission")
                 requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
         }
@@ -240,15 +244,21 @@ class MainActivity : ComponentActivity() {
         currentLanguage = if (currentLanguage == "en-US") "fr-FR" else "en-US"
         Log.i(TAG, "Language switched to: $currentLanguage")
         
-        // Set the language in the voice engine
-        voiceEngine.setLanguage(currentLanguage)
-        
-        // Restart voice engine with new language if currently listening
-        if (isListening) {
-            stopListening()
-            startListening()
+        try {
+            // Set the language in the voice engine
+            voiceEngine.setLanguage(currentLanguage)
+            
+            // Restart voice engine with new language if currently listening
+            if (isListening) {
+                stopListening()
+            }
+            // Restart the activity to ensure configuration changes are applied cleanly
+            finish()
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during language switch: ${e.message}", e)
+            transcriptionTextView.text = "Error during language switch: ${e.message}"
         }
-        updateSttStatus()
     }
     
     @SuppressLint("MissingPermission")

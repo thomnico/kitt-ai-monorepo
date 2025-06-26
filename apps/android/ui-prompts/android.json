@@ -8,6 +8,3 @@
   "manifest_permissions": "\n<!-- Add to AndroidManifest.xml -->\n<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\" />",
   "dependencies": "\n// Add to app/build.gradle dependencies\ndependencies {\n    implementation 'androidx.appcompat:appcompat:1.6.1'\n    implementation 'androidx.core:core:1.10.1'\n\n    // For FFT processing\n    implementation 'org.apache.commons:commons-math3:3.6.1'\n\n    // For advanced audio processing (optional)\n    implementation 'com.github.wendykierp:JTransforms:3.1'\n}"
 }
-⌥
-
-M
