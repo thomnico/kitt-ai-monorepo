@@ -65,7 +65,7 @@ public class KittDashboardView extends LinearLayout {
         
         String[] buttonLabels = {"AIR", "OIL", "P1", "P2", "S1", "S2"};
         int[] buttonColors = {
-            Color.RED, 
+            Color.YELLOW, // Changed AIR to yellow as per request
             Color.YELLOW, 
             Color.GREEN, 
             Color.BLUE, 

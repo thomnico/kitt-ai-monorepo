@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat;
 public class KittSpectrumView extends View {
     private static final String TAG = "KittSpectrumView";
     private static final int TOTAL_COLUMNS = 7; // Match the image - 7 columns total
-    private static final int MAX_SEGMENTS = 6; // Maximum segments per column
+    private static final int MAX_SEGMENTS = 20; // Maximum segments per column for detailed VU meter (set to 20 as requested)
     private Paint ledPaint;
     private Paint offLedPaint;
     private int[][] columnHeights = new int[TOTAL_COLUMNS][1]; // Current height for each column
@@ -67,13 +67,13 @@ public class KittSpectrumView extends View {
     
     private void initDemoPattern() {
         // Create a symmetric pattern like in the image
-        columnHeights[0][0] = 2; // Left outer
-        columnHeights[1][0] = 4; // Left middle
-        columnHeights[2][0] = 5; // Left inner
-        columnHeights[3][0] = 6; // Center (tallest)
-        columnHeights[4][0] = 5; // Right inner
-        columnHeights[5][0] = 4; // Right middle
-        columnHeights[6][0] = 2; // Right outer
+        columnHeights[0][0] = 4; // Left outer
+        columnHeights[1][0] = 8; // Left middle
+        columnHeights[2][0] = 10; // Left inner
+        columnHeights[3][0] = 12; // Center (tallest)
+        columnHeights[4][0] = 10; // Right inner
+        columnHeights[5][0] = 8; // Right middle
+        columnHeights[6][0] = 4; // Right outer
     }
 
     @Override
@@ -114,7 +114,22 @@ public class KittSpectrumView extends View {
 
                 if (seg >= startSeg && seg < endSeg && !isDarkColumn) {
                     // LED is "on" - bright red for active columns within the centered range
-                    canvas.drawRoundRect(ledRect, 3, 3, ledPaint);
+                    // Apply transparency effect at the top and bottom of the active bar for the last 4 segments
+                    if (seg >= endSeg - 4 && seg < endSeg) {
+                        // Calculate transparency factor for the top 4 segments, most fade at the top
+                        int alpha = (int) (255 * ((float)(endSeg - seg - 1) / 4.0f));
+                        ledPaint.setAlpha(alpha);
+                        canvas.drawRoundRect(ledRect, 2, 2, ledPaint);
+                        ledPaint.setAlpha(255); // Reset alpha after drawing
+                    } else if (seg >= startSeg && seg < startSeg + 4) {
+                        // Calculate transparency factor for the bottom 4 segments
+                        int alpha = (int) (255 * (1.0f - (float)(startSeg + 3 - seg) / 4.0f));
+                        ledPaint.setAlpha(alpha);
+                        canvas.drawRoundRect(ledRect, 2, 2, ledPaint);
+                        ledPaint.setAlpha(255); // Reset alpha after drawing
+                    } else {
+                        canvas.drawRoundRect(ledRect, 2, 2, ledPaint);
+                    }
                 }
                 // Do not draw anything for dark columns or inactive segments to make them transparent
             }
@@ -200,26 +215,39 @@ public class KittSpectrumView extends View {
     }
 
     private void processAudioData(short[] buffer, int length) {
-        // Calculate RMS for the entire buffer
-        double sum = 0;
-        for (int i = 0; i < length; i++) {
-            sum += buffer[i] * buffer[i];
+        // Simulate a basic frequency spectrum analysis by splitting the buffer into bands
+        int bandSize = length / 3; // Divide into 3 bands for left, center, right active columns
+        
+        // Calculate RMS for each band
+        float[] bandRms = new float[3];
+        for (int band = 0; band < 3; band++) {
+            double sum = 0;
+            int start = band * bandSize;
+            int end = Math.min((band + 1) * bandSize, length);
+            for (int i = start; i < end; i++) {
+                sum += buffer[i] * buffer[i];
+            }
+            bandRms[band] = (float) Math.sqrt(sum / (end - start));
         }
-        float rms = (float) Math.sqrt(sum / length);
         
-        // Normalize to 0-1 range
-        float normalizedLevel = Math.min(1.0f, rms / 10000.0f);
+        // Normalize to 0-1 range with increased sensitivity for more reactivity
+        float[] normalizedLevels = new float[3];
+        for (int band = 0; band < 3; band++) {
+            normalizedLevels[band] = Math.min(1.0f, bandRms[band] / 5000.0f);
+        }
         
-        // Convert to segment count (0-6) for center column
-        int centerHeight = Math.round(normalizedLevel * MAX_SEGMENTS);
+        // Convert to segment counts for each active column
+        int leftHeight = Math.round(normalizedLevels[0] * MAX_SEGMENTS);
+        int centerHeight = Math.round(normalizedLevels[1] * MAX_SEGMENTS);
+        int rightHeight = Math.round(normalizedLevels[2] * MAX_SEGMENTS);
         
-        // Set 3 active columns separated by dark columns with symmetry
+        // Set heights for columns with dark columns in between
         columnHeights[0][0] = 0; // Dark column
-        columnHeights[1][0] = Math.max(1, centerHeight - 1); // Active column 1 (left, lower)
+        columnHeights[1][0] = Math.max(2, leftHeight); // Active column 1 (left, based on low frequencies)
         columnHeights[2][0] = 0; // Dark column
-        columnHeights[3][0] = Math.max(1, centerHeight); // Active column 2 (center, highest)
+        columnHeights[3][0] = Math.max(2, centerHeight); // Active column 2 (center, based on mid frequencies)
         columnHeights[4][0] = 0; // Dark column
-        columnHeights[5][0] = Math.max(1, centerHeight - 1); // Active column 3 (right, lower)
+        columnHeights[5][0] = Math.max(2, rightHeight); // Active column 3 (right, based on high frequencies)
         columnHeights[6][0] = 0; // Dark column
     }
 

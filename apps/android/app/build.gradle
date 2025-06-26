@@ -6,7 +6,7 @@ plugins {
 android {
     namespace 'com.kitt.android'
     compileSdk 36
-
+ 
     defaultConfig {
         applicationId "com.kitt.android"
         minSdk 30
@@ -24,9 +24,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            debuggable true
-            jniDebuggable true
-            renderscriptDebuggable true
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
         }
     }
     compileOptions {

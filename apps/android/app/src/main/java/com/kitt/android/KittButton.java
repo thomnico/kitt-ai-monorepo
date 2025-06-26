@@ -115,13 +115,15 @@ public class KittButton extends View {
         }
 
         RectF rect = new RectF(padding, padding, width - padding, height - padding);
-        canvas.drawRoundRect(rect, 6, 6, backgroundPaint);
+        // Use an even higher corner radius to make the button rounder
+        canvas.drawRoundRect(rect, 30, 30, backgroundPaint);
         
         // Draw subtle border only when lighted
         if (isLighted || isPressed) {
             borderPaint.setColor(Color.parseColor("#FFFFFF"));
             borderPaint.setStrokeWidth(1);
-            canvas.drawRoundRect(rect, 6, 6, borderPaint);
+            // Use an even higher corner radius for the border to match the rounder shape
+            canvas.drawRoundRect(rect, 30, 30, borderPaint);
         }
         
         // Draw text if it exists
