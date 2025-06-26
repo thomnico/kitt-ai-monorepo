@@ -48,6 +48,12 @@ These are the core, non-negotiable principles for developing within the KITT Fra
 
 ---
 
+### Rule 9: Use .gitignore as the Source for File Exclusions in Analysis
+
+- **Respect .gitignore Exclusions:** When analyzing the repository for code, documentation, or any other purpose, all tools and processes must respect the exclusions defined in the .gitignore files at the root and in subdirectories. This ensures that temporary, system-generated, or otherwise irrelevant files (such as .DS_Store) are not considered during analysis or included in any automated processes.
+
+---
+
 These rules are the blueprint for our success. They ensure we build a framework that is fast, reliable, legally sound, and maintainable.
 
 ## PRDs above all

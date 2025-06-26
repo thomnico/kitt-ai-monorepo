@@ -127,6 +127,9 @@ Add final polish with:
 - Include error handling and logging
 - Follow Android development best practices
 
+**Analysis Exclusions:**
+- **Respect .gitignore Exclusions:** When analyzing the repository for code, documentation, or any other purpose, all tools and processes must respect the exclusions defined in the .gitignore files at the root and in subdirectories. This ensures that temporary, system-generated, or otherwise irrelevant files (such as .DS_Store) are not considered during analysis or included in any automated processes.
+
 **Performance Considerations:**
 - Optimize custom view drawing
 - Use efficient audio processing
