@@ -9,7 +9,7 @@ class KittCarAppService : CarAppService() {
         return KittSession()
     }
 
-    override fun getHostValidator(): HostValidator {
+    override fun createHostValidator(): HostValidator {
         return HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
     }
 }

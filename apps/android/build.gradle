@@ -2,7 +2,7 @@
 buildscript {
     ext {
         kotlin_version = '1.9.0'
-        android_gradle_plugin_version = '8.10.1'
+        android_gradle_plugin_version = '8.11.0'
     }
     repositories {
         google()
