@@ -192,8 +192,27 @@ class MainActivity : ComponentActivity() {
         val sttStatus = if (isListening) "🟢 LISTENING" else "🔴 STOPPED"
         val languageText = if (currentLanguage == "fr-FR") "🇫🇷 FRENCH" else "🇺🇸 ENGLISH"
         val engineText = "🤖 ${voiceEngine.getCurrentEngine()}"
-        val gpuStatus = "⚡ GPU: ACTIVE"
-        val ramStatus = "💾 RAM: 512MB"
+        
+        // Dynamically fetch GPU model using OpenGL (requires a GLSurfaceView or similar to be fully accurate)
+        // For simplicity, we'll provide a placeholder that can be updated later with actual OpenGL context
+        val gpuStatus = try {
+            "⚡ GPU: ${getGpuModel()}"
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not fetch GPU model: ${e.message}")
+            "⚡ GPU: Unknown"
+        }
+        
+        // Dynamically fetch RAM size
+        val ramStatus = try {
+            val memoryInfo = android.app.ActivityManager.MemoryInfo()
+            val activityManager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            activityManager.getMemoryInfo(memoryInfo)
+            val totalRamMb = memoryInfo.totalMem / (1024 * 1024) // Convert bytes to MB
+            "💾 RAM: ${totalRamMb / 1024}GB (${totalRamMb}MB)"
+        } catch (e: Exception) {
+            Log.e(TAG, "Could not fetch RAM size: ${e.message}")
+            "💾 RAM: Unknown"
+        }
         
         val statusText = """
             $engineText | $languageText | $sttStatus
@@ -201,6 +220,23 @@ class MainActivity : ComponentActivity() {
         """.trimIndent()
         
         sttStatusTextView.text = statusText
+    }
+    
+    private fun getGpuModel(): String {
+        // This is a placeholder for actual GPU detection
+        // Proper GPU detection requires an OpenGL context which might not be readily available
+        // For a fully accurate implementation, consider initializing a GLSurfaceView or similar
+        return try {
+            val glRenderer = android.opengl.GLES10.glGetString(android.opengl.GLES10.GL_RENDERER)
+            if (glRenderer.isNotEmpty()) {
+                glRenderer
+            } else {
+                "Unknown (GL context not available)"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching GPU model: ${e.message}")
+            "Unknown"
+        }
     }
 
     private fun checkPermissionsAndStartListening() {
