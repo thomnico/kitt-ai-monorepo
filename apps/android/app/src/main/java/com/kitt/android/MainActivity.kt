@@ -89,6 +89,15 @@ class MainActivity : ComponentActivity() {
         val buttonAutoCruise: KittButton = findViewById(R.id.buttonAutoCruise)
         val buttonNormalCruise: KittButton = findViewById(R.id.buttonNormalCruise)
 
+        Log.i(TAG, "Setting up button listeners - Language button found: ${buttonLanguage != null}")
+        
+        // Post a runnable to get button position after layout is complete
+        buttonLanguage.post {
+            Log.i(TAG, "Button dimensions - Language: ${buttonLanguage.width}x${buttonLanguage.height}")
+            Log.i(TAG, "Button position - Language: (${buttonLanguage.x}, ${buttonLanguage.y})")
+            Log.i(TAG, "Button clickable: ${buttonLanguage.isClickable}")
+        }
+        
         // Initialize button states based on current settings
         updateLanguageButton(buttonLanguage)
         updateModelButton(buttonModel)
@@ -105,8 +114,11 @@ class MainActivity : ComponentActivity() {
 
         // Language switch functionality
         buttonLanguage.setOnClickListener { 
+            Log.i(TAG, "Language button clicked!")
+            Log.i(TAG, "Current language before switch: $currentLanguage")
             switchLanguage()
             updateLanguageButton(buttonLanguage)
+            Log.i(TAG, "Language switch completed, new language: $currentLanguage")
         }
         
         // Model switch functionality
@@ -241,23 +253,57 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun switchLanguage() {
+        val previousLanguage = currentLanguage
         currentLanguage = if (currentLanguage == "en-US") "fr-FR" else "en-US"
-        Log.i(TAG, "Language switched to: $currentLanguage")
+        Log.i(TAG, "Language switching from $previousLanguage to: $currentLanguage")
         
         try {
-            // Set the language in the voice engine
-            voiceEngine.setLanguage(currentLanguage)
-            
-            // Restart voice engine with new language if currently listening
-            if (isListening) {
+            // Stop listening if currently active and wait for voice processing to complete
+            val wasListening = isListening
+            if (wasListening) {
+                isListening = false // Stop the processing loop first
+                Thread.sleep(200) // Give time for processing loop to exit
                 stopListening()
+                Log.i(TAG, "Stopped listening for language switch")
             }
-            // Restart the activity to ensure configuration changes are applied cleanly
-            finish()
-            startActivity(intent)
+            
+            // Set the language in the voice engine (this is now synchronized)
+            voiceEngine.setLanguage(currentLanguage)
+            Log.i(TAG, "Voice engine language updated to: $currentLanguage")
+            
+            // Update UI to reflect language change
+            updateSttStatus()
+            val languageText = if (currentLanguage == "fr-FR") "Langue changée en Français" else "Language changed to English"
+            transcriptionTextView.text = languageText
+            
+            // Restart listening if it was active before
+            if (wasListening) {
+                // Longer delay to ensure voice engine is fully ready
+                Thread {
+                    Thread.sleep(1000)
+                    runOnUiThread {
+                        try {
+                            startListening()
+                            Log.i(TAG, "Resumed listening after language switch")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to resume listening after language switch: ${e.message}")
+                            runOnUiThread {
+                                transcriptionTextView.text = "Error resuming listening: ${e.message}"
+                            }
+                        }
+                    }
+                }.start()
+            }
+            
+            Log.i(TAG, "Language switch completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error during language switch: ${e.message}", e)
-            transcriptionTextView.text = "Error during language switch: ${e.message}"
+            // Rollback language change on error
+            currentLanguage = previousLanguage
+            runOnUiThread {
+                transcriptionTextView.text = "Error during language switch: ${e.message}"
+                updateSttStatus()
+            }
         }
     }
     

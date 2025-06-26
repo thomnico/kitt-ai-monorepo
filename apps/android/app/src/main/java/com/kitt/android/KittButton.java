@@ -150,13 +150,16 @@ public class KittButton extends View {
     
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        android.util.Log.i("KittButton", "Touch event received: " + event.getAction() + " at (" + event.getX() + ", " + event.getY() + ")");
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                android.util.Log.i("KittButton", "Button pressed down");
                 isPressed = true;
                 invalidate();
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                android.util.Log.i("KittButton", "Button released, performing click");
                 isPressed = false;
                 invalidate();
                 performClick();

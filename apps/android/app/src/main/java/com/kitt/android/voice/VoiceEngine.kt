@@ -493,19 +493,73 @@ class VoiceEngine(private val context: Context) {
      * Set the language for voice recognition.
      * @param language The language code (e.g., "en-US" or "fr-FR").
      */
+    @Synchronized
     fun setLanguage(language: String) {
         Log.i(TAG, "Setting language to $language")
-        currentLanguage = language
-        if (useNativeAndroid) {
-            // For Android STT, we just store the language and use it when starting listening
-            Log.i(TAG, "Language set for Android STT: $language")
-        } else {
-            // For Vosk, convert to model key
-            val modelKey = when (language) {
-                "fr-FR" -> "fr"
-                else -> "en-us"
+        val previousLanguage = currentLanguage
+        val previousModelKey = currentModelKey
+        val wasListening = isListening
+        
+        try {
+            // Stop any ongoing voice processing first
+            if (wasListening && !useNativeAndroid) {
+                Log.i(TAG, "Stopping voice processing for language switch")
+                recorder?.stop()
+                recorder?.release()
+                recorder = null
+                isListening = false
+                // Give time for any ongoing processing to complete
+                Thread.sleep(100)
             }
-            setModel(modelKey)
+            
+            currentLanguage = language
+            if (useNativeAndroid) {
+                // For Android STT, we just store the language and use it when starting listening
+                Log.i(TAG, "Language set for Android STT: $language")
+            } else {
+                // For Vosk, convert to model key and reinitialize if needed
+                val modelKey = when (language) {
+                    "fr-FR" -> "fr"
+                    else -> "en-us"
+                }
+                
+                if (modelKey != currentModelKey) {
+                    Log.i(TAG, "Model key changed from $currentModelKey to $modelKey, reinitializing...")
+                    
+                    // Clean up existing resources safely
+                    try {
+                        recognizer = null
+                        model?.close()
+                        model = null
+                        Log.i(TAG, "Cleaned up previous model resources")
+                    } catch (cleanupException: Exception) {
+                        Log.w(TAG, "Warning during resource cleanup: ${cleanupException.message}")
+                    }
+                    
+                    // Set new model key and reinitialize
+                    currentModelKey = modelKey
+                    if (!initVoiceEngine()) {
+                        throw Exception("Failed to initialize voice engine with new language model")
+                    }
+                    Log.i(TAG, "Successfully reinitialized voice engine for language: $language")
+                } else {
+                    Log.i(TAG, "Model key unchanged, no reinitialization needed")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set language to $language: ${e.message}", e)
+            // Rollback changes
+            currentLanguage = previousLanguage
+            currentModelKey = previousModelKey
+            // Try to reinitialize with previous settings
+            try {
+                if (!useNativeAndroid) {
+                    initVoiceEngine()
+                }
+            } catch (rollbackException: Exception) {
+                Log.e(TAG, "Failed to rollback to previous language: ${rollbackException.message}")
+            }
+            throw e
         }
     }
 
