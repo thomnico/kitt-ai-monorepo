@@ -57,7 +57,7 @@
             android:layout_marginEnd="20dp">
 
             <com.kitt.android.KittButton
-                android:id="@+id/buttonAir"
+                android:id="@+id/buttonLang"
                 android:layout_width="80dp"
                 android:layout_height="50dp"
                 android:text="EN"
@@ -65,7 +65,7 @@
                 android:backgroundTint="#FFAA00" />
 
             <com.kitt.android.KittButton
-                android:id="@+id/buttonOil"
+                android:id="@+id/buttonVosk"
                 android:layout_width="80dp"
                 android:layout_height="50dp"
                 android:text="VOSK"

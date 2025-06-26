@@ -533,7 +533,7 @@ public class KittDashboardView extends LinearLayout {
         sideButtonsLayout.setBackgroundColor(Color.parseColor("#1a1a1a"));
         sideButtonsLayout.setPadding(10, 10, 10, 10);
         
-        String[] buttonLabels = {"AIR", "OIL", "P1", "P2", "S1", "S2"};
+        String[] buttonLabels = {"LANG", "VOSK", "P1", "P2", "S1", "S2"};
         int[] buttonColors = {
             Color.RED, 
             Color.YELLOW, 
@@ -596,11 +596,11 @@ public class KittDashboardView extends LinearLayout {
         
         // Add specific button functionality here
         switch (buttonLabel) {
-            case "AIR":
-                // Air conditioning control
+            case "LANG":
+                // Language selection control (ENG/FR)
                 break;
-            case "OIL":
-                // Oil system check
+            case "VOSK":
+                // Voice model diagnostics
                 break;
             case "P1":
             case "P2":

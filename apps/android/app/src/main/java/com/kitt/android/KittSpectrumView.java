@@ -241,6 +241,10 @@ public class KittSpectrumView extends View {
         int centerHeight = Math.round(normalizedLevels[1] * MAX_SEGMENTS);
         int rightHeight = Math.round(normalizedLevels[2] * MAX_SEGMENTS);
         
+        // Ensure center bar is always taller than the side bars
+        int maxSideHeight = Math.max(leftHeight, rightHeight);
+        centerHeight = Math.max(centerHeight, maxSideHeight + 2); // Center at least 2 segments taller than sides
+        
         // Set heights for columns with dark columns in between
         columnHeights[0][0] = 0; // Dark column
         columnHeights[1][0] = Math.max(2, leftHeight); // Active column 1 (left, based on low frequencies)

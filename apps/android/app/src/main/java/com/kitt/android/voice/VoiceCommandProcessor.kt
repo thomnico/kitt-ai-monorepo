@@ -18,16 +18,16 @@ class VoiceCommandProcessor(
         // Voice command mappings
         private val COMMAND_MAPPINGS = mapOf(
             // Air conditioning commands
-            "air" to "AIR",
-            "air conditioning" to "AIR",
-            "climate" to "AIR",
-            "temperature" to "AIR",
+            "language" to "LANG",
+            "language setting" to "LANG",
+            "english" to "LANG",
+            "french" to "LANG",
             
-            // Oil system commands
-            "oil" to "OIL",
-            "oil check" to "OIL",
-            "oil system" to "OIL",
-            "diagnostics" to "OIL",
+            // Voice model selection commands
+            "vosk" to "VOSK",
+            "model check" to "VOSK",
+            "voice system" to "VOSK",
+            "diagnostics" to "VOSK",
             
             // Program commands
             "program one" to "P1",
@@ -91,8 +91,8 @@ class VoiceCommandProcessor(
         
         // Fuzzy match for common variations
         return when {
-            input.contains("air") || input.contains("climate") -> "AIR"
-            input.contains("oil") || input.contains("diagnostic") -> "OIL"
+            input.contains("language") || input.contains("english") || input.contains("french") -> "LANG"
+            input.contains("vosk") || input.contains("diagnostic") -> "VOSK"
             input.contains("program") && (input.contains("1") || input.contains("one")) -> "P1"
             input.contains("program") && (input.contains("2") || input.contains("two")) -> "P2"
             input.contains("scanner") || input.contains("scan") -> "S1"
@@ -109,13 +109,13 @@ class VoiceCommandProcessor(
         Log.i(TAG, "Executing command: $command (from input: $originalInput)")
         
         when (command) {
-            "AIR" -> {
-                dashboardView?.simulateButtonPress("AIR")
-                provideFeedback("Air conditioning system activated")
+            "LANG" -> {
+                dashboardView?.simulateButtonPress("LANG")
+                provideFeedback("Language selection activated (ENG/FR)")
             }
-            "OIL" -> {
-                dashboardView?.simulateButtonPress("OIL")
-                provideFeedback("Oil system diagnostics initiated")
+            "VOSK" -> {
+                dashboardView?.simulateButtonPress("VOSK")
+                provideFeedback("Voice model diagnostics initiated")
             }
             "P1" -> {
                 dashboardView?.simulateButtonPress("P1")

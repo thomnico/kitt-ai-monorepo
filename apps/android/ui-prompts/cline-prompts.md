@@ -7,7 +7,7 @@ Create an Android application that mimics the KITT K2000 car interface from Knig
 **Core Requirements:**
 - Native Android app using Java/Kotlin
 - Custom views for KITT-style interface
-- 6 side buttons with KITT styling (AIR, OIL, P1, P2, S1, S2)
+- 6 side buttons with KITT styling (LANG, VOSK, P1, P2, S1, S2)
 - Oscillating red scanner lights (like KITT's voice box)
 - Real-time audio spectrum analyzer with scope visualization
 - Dark/black theme with red, yellow, and green accents

@@ -75,8 +75,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupSwitchListeners() {
-        val buttonLanguage: KittButton = findViewById(R.id.buttonAir) // Language switch button
-        val buttonModel: KittButton = findViewById(R.id.buttonOil) // Model switch button
+        val buttonLanguage: KittButton = findViewById(R.id.buttonLang) // Language switch button
+        val buttonModel: KittButton = findViewById(R.id.buttonVosk) // Model switch button
         val buttonP1: KittButton = findViewById(R.id.buttonP1)
         val buttonP2: KittButton = findViewById(R.id.buttonP2)
         val buttonS1: KittButton = findViewById(R.id.buttonS1)
@@ -245,8 +245,8 @@ class MainActivity : ComponentActivity() {
         
         // Restart voice engine with new language if currently listening
         if (isListening) {
-            voiceEngine.stopListening()
-            voiceEngine.startListening()
+            stopListening()
+            startListening()
         }
         updateSttStatus()
     }

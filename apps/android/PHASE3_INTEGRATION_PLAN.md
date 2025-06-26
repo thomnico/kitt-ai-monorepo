@@ -24,8 +24,8 @@ This phase focuses on integrating the KITT K2000 UI components with the existing
 #### 1.2 Button-to-Voice Mapping
 ```kotlin
 // Button mappings to voice commands
-AIR -> "Air conditioning control"
-OIL -> "Oil system diagnostics" 
+LANG -> "Language selection control (ENG/FR)"
+VOSK -> "Voice model diagnostics"
 P1/P2 -> "Program 1/2 activation"
 S1/S2 -> "Scanner mode 1/2"
 ```

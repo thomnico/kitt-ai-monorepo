@@ -52,7 +52,7 @@ The Android project is now fully functional with:
 **Location**: `app/src/main/java/com/kitt/android/KittDashboardView.java`
 **Purpose**: Main container combining all components
 **Features**:
-- 6 side buttons (AIR, OIL, P1, P2, S1, S2)
+- 6 side buttons (LANG, VOSK, P1, P2, S1, S2)
 - Center panel with scanner and spectrum
 - Proper layout management
 - System lifecycle handling

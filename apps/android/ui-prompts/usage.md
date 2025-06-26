@@ -110,7 +110,7 @@ Technical details:
 Create KittDashboardView that combines all components:
 1. Horizontal LinearLayout container
 2. Left side: Vertical panel with 6 KittButtons
-   - Labels: "AIR", "OIL", "P1", "P2", "S1", "S2"  
+   - Labels: "LANG", "VOSK", "P1", "P2", "S1", "S2"
    - Colors: RED, YELLOW, GREEN, BLUE, CYAN, MAGENTA
    - Fixed width: 120dp each
 3. Center panel: Vertical layout containing:

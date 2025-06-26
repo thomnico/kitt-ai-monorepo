@@ -32,7 +32,7 @@ This document summarizes the implementation of the KITT K2000 interface componen
 - **Features**:
   - Main container combining all components
   - Horizontal LinearLayout with side buttons and center panel
-  - 6 side buttons (AIR, OIL, P1, P2, S1, S2)
+  - 6 side buttons (LANG, VOSK, P1, P2, S1, S2)
   - Integration with existing KittScannerView (Kotlin)
   - System start/stop controls
 
@@ -75,14 +75,14 @@ KittActivity (Java)
 ├── activity_kitt.xml
 └── KittDashboardView (Java)
     ├── Side Panel
-    │   ├── KittButton (AIR) 
-    │   ├── KittButton (OIL)
+    │   ├── KittButton (LANG)
+    │   ├── KittButton (VOSK)
     │   ├── KittButton (P1)
     │   ├── KittButton (P2)
     │   ├── KittButton (S1)
     │   └── KittButton (S2)
     └── Center Panel
-        ├── KittScannerView (Kotlin - existing)
+        ├── KittScannerView (Kotlin)
         └── KittSpectrumView (Java)
 ```
 

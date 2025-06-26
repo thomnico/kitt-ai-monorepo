@@ -4,7 +4,7 @@
 
 This document provides Grok with everything needed to implement the complete KITT K2000 Android interface. The implementation includes:
 
-1. **6 Custom KITT-style buttons** (AIR, OIL, P1, P2, S1, S2)
+1. **6 Custom KITT-style buttons** (LANG, VOSK, P1, P2, S1, S2)
 2. **Oscillating red scanner animation** (like KITT's voice box)
 3. **Real-time audio spectrum analyzer**
 4. **Voice command integration**
@@ -81,7 +81,7 @@ public class KittDashboardView extends LinearLayout {
         sideButtonsLayout.setBackgroundColor(Color.parseColor("#1a1a1a"));
         sideButtonsLayout.setPadding(10, 10, 10, 10);
         
-        String[] buttonLabels = {"AIR", "OIL", "P1", "P2", "S1", "S2"};
+        String[] buttonLabels = {"LANG", "VOSK", "P1", "P2", "S1", "S2"};
         int[] buttonColors = {
             Color.RED, 
             Color.YELLOW, 
@@ -144,11 +144,11 @@ public class KittDashboardView extends LinearLayout {
         
         // Add specific button functionality here
         switch (buttonLabel) {
-            case "AIR":
-                // Air conditioning control
+            case "LANG":
+                // Language selection control (ENG/FR)
                 break;
-            case "OIL":
-                // Oil system check
+            case "VOSK":
+                // Voice model diagnostics
                 break;
             case "P1":
             case "P2":
@@ -220,7 +220,7 @@ public class KittDashboardView extends LinearLayout {
      * Get button label by index
      */
     private String getButtonLabel(int index) {
-        String[] buttonLabels = {"AIR", "OIL", "P1", "P2", "S1", "S2"};
+        String[] buttonLabels = {"LANG", "VOSK", "P1", "P2", "S1", "S2"};
         if (index >= 0 && index < buttonLabels.length) {
             return buttonLabels[index];
         }
@@ -247,11 +247,11 @@ class VoiceCommandProcessor {
         val lowerCommand = command.lowercase().trim()
         
         when {
-            lowerCommand.contains("air") || lowerCommand.contains("climate") -> {
-                buttonPressListener?.invoke("AIR")
+            lowerCommand.contains("language") || lowerCommand.contains("english") || lowerCommand.contains("french") -> {
+                buttonPressListener?.invoke("LANG")
             }
-            lowerCommand.contains("oil") || lowerCommand.contains("engine") -> {
-                buttonPressListener?.invoke("OIL")
+            lowerCommand.contains("vosk") || lowerCommand.contains("voice model") -> {
+                buttonPressListener?.invoke("VOSK")
             }
             lowerCommand.contains("program one") || lowerCommand.contains("p1") -> {
                 buttonPressListener?.invoke("P1")
@@ -430,33 +430,19 @@ public class KittActivity extends AppCompatActivity {
 The completed app will display:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                KNIGHT INDUSTRIES 2000                  │
-├─────────┬───────────────────────────────────────────────┤
-│   AIR   │  ████████████████████████████████████████████ │
-├─────────┤  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
-│   OIL   │  ████████████████████████████████████████████ │
-├─────────┤                                               │
-│   P1    │  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-├─────────┤  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-│   P2    │  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-├─────────┤  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-│   S1    │  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-├─────────┤  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-│   S2    │  ████ ████ ████ ████ ████ ████ ████ ████ ████ │
-└─────────┴───────────────────────────────────────────────┘
+
 ```
 
 - **Top**: Red "KNIGHT INDUSTRIES 2000" title
-- **Left**: 6 colored buttons (AIR=red, OIL=yellow, P1=green, P2=blue, S1=cyan, S2=magenta)
+- **Left**: 6 colored buttons (LANG=red, VOSK=yellow, P1=green, P2=blue, S1=cyan, S2=magenta)
 - **Center Top**: Oscillating red scanner animation
 - **Center Bottom**: Real-time audio spectrum analyzer bars
 
 ## Voice Commands
 
 Users can say:
-- "Activate air" → Presses AIR button
-- "Check oil" → Presses OIL button  
+- "Select language" → Presses LANG button
+- "Check voice model" → Presses VOSK button  
 - "Program one" → Presses P1 button
 - "Program two" → Presses P2 button
 - "Scanner one" → Presses S1 button

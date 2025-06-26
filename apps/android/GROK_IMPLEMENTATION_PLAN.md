@@ -143,8 +143,8 @@ class VoiceCommandProcessor {
     
     fun processCommand(command: String) {
         when (command.lowercase()) {
-            "activate air", "air on" -> buttonPressListener?.invoke("AIR")
-            "check oil", "oil status" -> buttonPressListener?.invoke("OIL")
+            "activate language", "language on" -> buttonPressListener?.invoke("LANG")
+            "check vosk", "vosk status" -> buttonPressListener?.invoke("VOSK")
             "program one", "p1" -> buttonPressListener?.invoke("P1")
             "program two", "p2" -> buttonPressListener?.invoke("P2")
             "scanner one", "s1" -> buttonPressListener?.invoke("S1")
