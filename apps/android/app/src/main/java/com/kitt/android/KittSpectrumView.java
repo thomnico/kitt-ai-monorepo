@@ -90,24 +90,33 @@ public class KittSpectrumView extends View {
         float ledWidth = columnWidth * 0.7f; // 70% of column width for LED
         float ledHeight = segmentHeight * 0.8f; // 80% of segment height for LED
         float ledSpacing = columnWidth * 0.15f; // Spacing between LEDs
+        int maxSegmentsForDarkColumns = MAX_SEGMENTS - 2; // Shorter height for dark columns
+        int middleSegment = MAX_SEGMENTS / 2; // Middle point for symmetry
 
         for (int col = 0; col < TOTAL_COLUMNS; col++) {
             float columnLeft = col * columnWidth + ledSpacing;
             int activeSegments = columnHeights[col][0];
+            boolean isDarkColumn = (col == 0 || col == 2 || col == 4 || col == 6);
 
             for (int seg = 0; seg < MAX_SEGMENTS; seg++) {
+                // Skip drawing segments beyond the shorter height for dark columns
+                if (isDarkColumn && seg >= maxSegmentsForDarkColumns) continue;
+
                 float segmentTop = height - (seg + 1) * segmentHeight + (segmentHeight - ledHeight) / 2;
                 float segmentBottom = segmentTop + ledHeight;
 
                 RectF ledRect = new RectF(columnLeft, segmentTop, columnLeft + ledWidth, segmentBottom);
 
-                if (seg < activeSegments) {
-                    // LED is "on" - bright red
+                // Calculate the range for active segments to be centered vertically
+                int halfActive = activeSegments / 2;
+                int startSeg = middleSegment - halfActive;
+                int endSeg = middleSegment + halfActive + (activeSegments % 2 == 0 ? 0 : 1);
+
+                if (seg >= startSeg && seg < endSeg && !isDarkColumn) {
+                    // LED is "on" - bright red for active columns within the centered range
                     canvas.drawRoundRect(ledRect, 3, 3, ledPaint);
-                } else {
-                    // LED is "off" - dark red outline
-                    canvas.drawRoundRect(ledRect, 3, 3, offLedPaint);
                 }
+                // Do not draw anything for dark columns or inactive segments to make them transparent
             }
         }
     }
@@ -201,26 +210,17 @@ public class KittSpectrumView extends View {
         // Normalize to 0-1 range
         float normalizedLevel = Math.min(1.0f, rms / 10000.0f);
         
-        // Convert to segment count (0-6)
+        // Convert to segment count (0-6) for center column
         int centerHeight = Math.round(normalizedLevel * MAX_SEGMENTS);
         
-        // Create symmetric pattern
-        columnHeights[3][0] = centerHeight; // Center column
-        
-        // Inner columns (slightly lower)
-        int innerHeight = Math.max(0, centerHeight - 1);
-        columnHeights[2][0] = innerHeight; // Left inner
-        columnHeights[4][0] = innerHeight; // Right inner
-        
-        // Middle columns (even lower)
-        int middleHeight = Math.max(0, centerHeight - 2);
-        columnHeights[1][0] = middleHeight; // Left middle
-        columnHeights[5][0] = middleHeight; // Right middle
-        
-        // Outer columns (lowest)
-        int outerHeight = Math.max(0, centerHeight - 3);
-        columnHeights[0][0] = outerHeight; // Left outer
-        columnHeights[6][0] = outerHeight; // Right outer
+        // Set 3 active columns separated by dark columns with symmetry
+        columnHeights[0][0] = 0; // Dark column
+        columnHeights[1][0] = Math.max(1, centerHeight - 1); // Active column 1 (left, lower)
+        columnHeights[2][0] = 0; // Dark column
+        columnHeights[3][0] = Math.max(1, centerHeight); // Active column 2 (center, highest)
+        columnHeights[4][0] = 0; // Dark column
+        columnHeights[5][0] = Math.max(1, centerHeight - 1); // Active column 3 (right, lower)
+        columnHeights[6][0] = 0; // Dark column
     }
 
     @Override
