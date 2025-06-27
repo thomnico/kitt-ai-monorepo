@@ -585,8 +585,22 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "Starting Voice Recorder with wake word detection")
         
         try {
+            // Start actual audio recording
+            val recordingFilePath = voiceEngine.startRecording()
+            if (recordingFilePath != null) {
+                val fileName = recordingFilePath.substringAfterLast('/')
+                val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                val startMessage = "[$timestamp] 🎤 Recording Started: $fileName"
+                detectedTextList.add(startMessage)
+                detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+                transcriptionTextView.text = "Voice Recorder: Recording to $fileName"
+            } else {
+                Log.w(TAG, "Recording failed to start")
+                transcriptionTextView.text = "Voice Recorder: Failed to start recording"
+            }
+            
             // For now, use the existing voice engine for wake word detection
-            // In a future enhancement, this could be replaced with a dedicated recorder
             if (!isListening) {
                 voiceEngine.startListening()
                 isListening = true
@@ -612,8 +626,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                                 
-                                // Update status
-                                transcriptionTextView.text = "Voice Recorder: Listening for 'Hey Kit'..."
+                                // Update status if not overridden by wake phrase
+                                if (transcriptionTextView.text.toString().contains("Recording Started") ||
+                                    transcriptionTextView.text.toString().contains("Listening for 'Hey Kit'")) {
+                                    transcriptionTextView.text = "Voice Recorder: Listening for 'Hey Kit'..."
+                                }
                             }
                         }
                         Thread.sleep(100)
@@ -624,7 +641,6 @@ class MainActivity : ComponentActivity() {
                 Log.i(TAG, "Voice Recorder: Stopped monitoring")
             }.start()
             
-            transcriptionTextView.text = "Voice Recorder: Active - Say 'Hey Kit' to wake"
             updateSttStatus()
             
         } catch (e: Exception) {
@@ -640,6 +656,20 @@ class MainActivity : ComponentActivity() {
     private fun stopVoiceRecorder() {
         Log.i(TAG, "Stopping Voice Recorder")
         
+        // Stop recording
+        val recordingFilePath = voiceEngine.stopRecording()
+        if (recordingFilePath != null) {
+            val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+            val stopMessage = "[$timestamp] ⏹️ Recording Stopped"
+            detectedTextList.add(stopMessage)
+            detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+            detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+            transcriptionTextView.text = "Voice Recorder: Stopped"
+        } else {
+            Log.w(TAG, "No recording was active to stop")
+            transcriptionTextView.text = "Voice Recorder: Stopped (No recording active)"
+        }
+        
         // Stop listening if no other modes are active
         if (isListening && !isAiTalkActive) {
             voiceEngine.stopListening()
@@ -647,7 +677,6 @@ class MainActivity : ComponentActivity() {
             toggleScannerAnimation(false)
         }
         
-        transcriptionTextView.text = "Voice Recorder: Stopped"
         updateSttStatus()
     }
 
@@ -656,6 +685,18 @@ class MainActivity : ComponentActivity() {
      */
     private fun onWakePhraseDetected() {
         Log.i(TAG, "Wake phrase 'Hey Kit' detected!")
+        
+        // Stop recording if active
+        if (voiceEngine.isRecordingActive()) {
+            val recordingFilePath = voiceEngine.stopRecording()
+            if (recordingFilePath != null) {
+                val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                val stopMessage = "[$timestamp] ⏹️ Recording Stopped - Wake Phrase Detected"
+                detectedTextList.add(stopMessage)
+                detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+            }
+        }
         
         // Provide visual feedback
         runOnUiThread {

@@ -19,6 +19,9 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.io.FileOutputStream
 import android.os.Bundle
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // Performance target: Ensure end-to-end latency < 200ms as per monorepo rules
 private const val MAX_LATENCY_MS = 200L
@@ -39,8 +42,12 @@ class VoiceEngine(private val context: Context) {
     private var recognizer: Recognizer? = null
     private var recorder: AudioRecord? = null
     private var speechRecognizer: SpeechRecognizer? = null
+    private var mediaRecorder: MediaRecorder? = null
+    private var recordingFilePath: String? = null
     private val modelPath = "${context.filesDir.absolutePath}/models/vosk"
+    private val recordingsPath = "${context.filesDir.absolutePath}/recordings"
     private var isListening = false
+    private var isRecording = false
     private var currentModelKey = "en-us"
     private var currentLanguage = "en-US"
     private var useNativeAndroid = false
@@ -74,6 +81,13 @@ class VoiceEngine(private val context: Context) {
      */
     fun initVoiceEngine(): Boolean {
         val startTime = System.currentTimeMillis()
+
+        // Ensure recordings directory exists
+        val recordingsDir = File(recordingsPath)
+        if (!recordingsDir.exists()) {
+            recordingsDir.mkdirs()
+            Log.i(TAG, "Created recordings directory: $recordingsPath")
+        }
 
         if (useNativeAndroid) {
             // Initialize native Android speech recognizer
@@ -647,6 +661,80 @@ class VoiceEngine(private val context: Context) {
             transcriptionCallback?.onTranscription(finalResult)
             return finalResult
         }
+    }
+
+    /**
+     * Start audio recording.
+     * @return The file path of the recording if started successfully, null otherwise.
+     */
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    fun startRecording(): String? {
+        if (isRecording) {
+            Log.w(TAG, "Already recording")
+            return recordingFilePath
+        }
+
+        try {
+            val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+            val dateStr = dateFormat.format(Date())
+            val fileName = "kitt-$dateStr.3gp"
+            recordingFilePath = "$recordingsPath/$fileName"
+            
+            mediaRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFile(recordingFilePath)
+                prepare()
+                start()
+            }
+            isRecording = true
+            Log.i(TAG, "Started recording to $recordingFilePath")
+            return recordingFilePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start recording: ${e.message}")
+            mediaRecorder?.release()
+            mediaRecorder = null
+            recordingFilePath = null
+            isRecording = false
+            return null
+        }
+    }
+
+    /**
+     * Stop audio recording.
+     * @return The file path of the recording if stopped successfully, null otherwise.
+     */
+    fun stopRecording(): String? {
+        if (!isRecording) {
+            Log.w(TAG, "Not currently recording")
+            return null
+        }
+
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+            isRecording = false
+            Log.i(TAG, "Stopped recording to $recordingFilePath")
+            return recordingFilePath
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to stop recording: ${e.message}")
+            mediaRecorder?.release()
+            mediaRecorder = null
+            isRecording = false
+            return null
+        }
+    }
+
+    /**
+     * Check if recording is currently active.
+     * @return Boolean indicating if recording is active.
+     */
+    fun isRecordingActive(): Boolean {
+        return isRecording
     }
 
     /**
