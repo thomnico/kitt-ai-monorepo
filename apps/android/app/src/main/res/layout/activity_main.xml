@@ -106,18 +106,18 @@
                 android:layout_marginBottom="20dp" />
 
             <com.kitt.android.KittButton
-                android:id="@+id/buttonAutoCruise"
+                android:id="@+id/buttonAiTalk"
                 android:layout_width="140dp"
                 android:layout_height="50dp"
-                android:text="AUTO\nCRUISE"
+                android:text="AI\nTALK"
                 android:layout_marginBottom="8dp"
                 android:backgroundTint="#FF4500" />
 
             <com.kitt.android.KittButton
-                android:id="@+id/buttonNormalCruise"
+                android:id="@+id/buttonVoiceRecorder"
                 android:layout_width="140dp"
                 android:layout_height="50dp"
-                android:text="NORMAL\nCRUISE"
+                android:text="VOICE\nRECORDER"
                 android:backgroundTint="#333333" />
         </LinearLayout>
 
@@ -157,7 +157,7 @@
                 android:id="@+id/buttonP4"
                 android:layout_width="80dp"
                 android:layout_height="50dp"
-                android:text="P4"
+                android:text="VMonitor"
                 android:backgroundTint="#FF0000" />
         </LinearLayout>
     </LinearLayout>

@@ -47,19 +47,22 @@ class VoiceEngine(private val context: Context) {
     private var transcriptionCallback: TranscriptionCallback? = null
     private var listeningStartTime: Long = 0
     private var lastResultTime: Long = 0
+    private var lastRmsZeroTime: Long = 0
     private val RESET_THRESHOLD_MS = 60000 // 1 minute
     private val FREEZE_TIMEOUT_MS = 10000 // 10 seconds to detect freeze
+    private val RMS_ZERO_TIMEOUT_MS = 10000 // 10 seconds to detect RMS at 0
 
     /**
      * Interface for transcription callbacks.
      */
     interface TranscriptionCallback {
         fun onTranscription(transcription: String)
+        fun onEngineReset(reason: String)
     }
 
     /**
-     * Set the callback for transcription results.
-     * @param callback The callback to be invoked with transcription results.
+     * Set the callback for transcription results and engine events.
+     * @param callback The callback to be invoked with transcription results and engine events.
      */
     fun setTranscriptionCallback(callback: TranscriptionCallback) {
         this.transcriptionCallback = callback
@@ -507,12 +510,16 @@ class VoiceEngine(private val context: Context) {
         
         try {
             // Stop any ongoing voice processing first
-            if (wasListening && !useNativeAndroid) {
+            if (wasListening) {
                 Log.i(TAG, "Stopping voice processing for language switch")
-                recorder?.stop()
-                recorder?.release()
-                recorder = null
-                isListening = false
+                if (useNativeAndroid) {
+                    speechRecognizer?.stopListening()
+                } else {
+                    recorder?.stop()
+                    recorder?.release()
+                    recorder = null
+                    isListening = false
+                }
                 // Give time for any ongoing processing to complete
                 Thread.sleep(100)
             }
@@ -569,27 +576,40 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
-     * Switch between Vosk and Native Android voice processing.
-     * @param useNative Boolean indicating whether to use Native Android processing.
+     * Reset the Vosk recognizer to prevent freezing after prolonged use.
+     * @param reason The reason for the reset, to be displayed in the UI.
      */
-    fun switchToNativeAndroid(useNative: Boolean) {
-        Log.i(TAG, "Switching to ${if (useNative) "Native Android" else "Vosk"} voice processing")
-        useNativeAndroid = useNative
-        // Clean up existing resources
-        if (useNative) {
-            model?.close()
-            model = null
-            recognizer = null
-        } else {
-            speechRecognizer?.destroy()
-            speechRecognizer = null
+    private fun resetRecognizer(reason: String = "Prolonged use timeout") {
+        if (!useNativeAndroid && recognizer != null) {
+            Log.i(TAG, "Resetting Vosk recognizer: $reason")
+            try {
+                // Ensure any ongoing recording is stopped and released
+                if (isListening) {
+                    recorder?.stop()
+                    recorder?.release()
+                    recorder = null
+                    isListening = false
+                    Log.i(TAG, "Stopped and released audio recorder during reset")
+                }
+                recognizer = null
+                model?.close()
+                model = null
+                Log.i(TAG, "Closed existing model and recognizer")
+                val initSuccess = initVoiceEngine()
+                listeningStartTime = System.currentTimeMillis()
+                lastResultTime = System.currentTimeMillis()
+                if (initSuccess) {
+                    Log.i(TAG, "Recognizer reset successful, new start time: $listeningStartTime")
+                    transcriptionCallback?.onEngineReset(reason)
+                } else {
+                    Log.e(TAG, "Failed to reinitialize voice engine after reset")
+                    transcriptionCallback?.onTranscription("Error: Failed to reinitialize voice engine after reset")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error resetting recognizer: ${e.message}", e)
+                transcriptionCallback?.onTranscription("Error: Failed to reset recognizer - ${e.message}")
+            }
         }
-        // Reinitialize with the new setting
-        if (!initVoiceEngine()) {
-            transcriptionCallback?.onTranscription("Error: Failed to initialize ${if (useNative) "Android STT" else "VOSK"} engine")
-        }
-        // Ensure language is set correctly for the new engine
-        setLanguage(currentLanguage)
     }
 
     /**
@@ -599,6 +619,16 @@ class VoiceEngine(private val context: Context) {
     fun stopListening(): String {
         if (!isListening) {
             Log.w(TAG, "Not currently listening")
+            // Ensure resources are released even if not listening
+            if (useNativeAndroid) {
+                speechRecognizer?.stopListening()
+                Log.i(TAG, "Ensured Native Android recognizer is stopped")
+            } else {
+                recorder?.stop()
+                recorder?.release()
+                recorder = null
+                Log.i(TAG, "Ensured Vosk recorder is stopped and released")
+            }
             return "Error: Not listening"
         }
 
@@ -641,6 +671,27 @@ class VoiceEngine(private val context: Context) {
             val buffer = ShortArray(BUFFER_SIZE)
             val read = recorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
             if (read > 0) {
+                // Calculate RMS for monitoring audio input level
+                var sum = 0.0
+                for (i in 0 until read) {
+                    sum += buffer[i] * buffer[i]
+                }
+                val rms = Math.sqrt(sum / read).toFloat()
+                Log.d(TAG, "Audio Input RMS: $rms")
+
+                // Check if RMS is 0 and track duration
+                if (rms == 0.0f) {
+                    if (lastRmsZeroTime == 0L) {
+                        lastRmsZeroTime = System.currentTimeMillis()
+                    } else if (System.currentTimeMillis() - lastRmsZeroTime >= RMS_ZERO_TIMEOUT_MS) {
+                        Log.w(TAG, "RMS level at 0 for ${RMS_ZERO_TIMEOUT_MS/1000}s, resetting engine")
+                        resetRecognizer("RMS level at 0 for too long")
+                        lastRmsZeroTime = System.currentTimeMillis() // Reset timer after action
+                    }
+                } else {
+                    lastRmsZeroTime = 0L // Reset timer if RMS is not 0
+                }
+
                 val isFinal = recognizer?.acceptWaveForm(buffer, read) ?: false
                 val result = if (isFinal) {
                     val finalResult = recognizer?.result ?: "{}"
@@ -658,7 +709,7 @@ class VoiceEngine(private val context: Context) {
                 if (processTime > MAX_LATENCY_MS) {
                     Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
                 }
-                Log.i(TAG, "${if (isFinal) "Final" else "Partial"} voice input processed in ${processTime}ms")
+                Log.d(TAG, "${if (isFinal) "Final" else "Partial"} voice input processed in ${processTime}ms")
 
                 // Update last result time if we have a non-empty result
                 if (result.isNotEmpty()) {
@@ -674,7 +725,7 @@ class VoiceEngine(private val context: Context) {
                 // Check for potential freeze based on last result time
                 if (lastResultTime > 0 && (System.currentTimeMillis() - lastResultTime) >= FREEZE_TIMEOUT_MS) {
                     Log.w(TAG, "No results for ${FREEZE_TIMEOUT_MS/1000}s, potential freeze detected, resetting recognizer")
-                    resetRecognizer()
+                    resetRecognizer("Potential freeze detected")
                     transcriptionCallback?.onTranscription("Warning: Audio processing stalled, resetting engine...")
                 }
 
@@ -685,24 +736,32 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
-     * Reset the Vosk recognizer to prevent freezing after prolonged use.
+     * Switch between engines.
+     * @param useNative Boolean indicating whether to use native Android STT (true) or Vosk (false).
      */
-    private fun resetRecognizer() {
-        if (!useNativeAndroid && recognizer != null) {
-            Log.i(TAG, "Resetting Vosk recognizer to prevent freezing")
-            try {
-                recognizer = null
-                model?.close()
-                model = null
-                initVoiceEngine()
-                listeningStartTime = System.currentTimeMillis()
-                lastResultTime = System.currentTimeMillis()
-                Log.i(TAG, "Recognizer reset successful, new start time: $listeningStartTime")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error resetting recognizer: ${e.message}")
-                transcriptionCallback?.onTranscription("Error: Failed to reset recognizer - ${e.message}")
-            }
+    private fun switchToNativeAndroid(useNative: Boolean) {
+        Log.i(TAG, "Switching to ${if (useNative) "Native Android" else "Vosk"} engine")
+        useNativeAndroid = useNative
+        // Ensure any ongoing listening is stopped
+        if (isListening) {
+            stopListening()
         }
+        // Clean up existing resources thoroughly
+        if (!useNativeAndroid) {
+            speechRecognizer?.stopListening()
+            speechRecognizer?.destroy()
+            speechRecognizer = null
+            Log.i(TAG, "Native Android recognizer resources fully released")
+        } else {
+            recognizer = null
+            model?.close()
+            model = null
+            Log.i(TAG, "Vosk model and recognizer resources fully released")
+        }
+        // Reinitialize the voice engine based on the new setting
+        initVoiceEngine()
+        // Ensure language is set correctly for the new engine
+        setLanguage(currentLanguage)
     }
 
     /**
@@ -721,5 +780,4 @@ class VoiceEngine(private val context: Context) {
         val useNative = engine.uppercase() == "ANDROID"
         switchToNativeAndroid(useNative)
     }
-
 }

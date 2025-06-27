@@ -102,6 +102,15 @@ public class KittActivity extends AppCompatActivity {
                         }
                     });
                 }
+                
+                @Override
+                public void onEngineReset(String reason) {
+                    runOnUiThread(() -> {
+                        if (kittDashboard != null) {
+                            kittDashboard.updateTranscription("RESET voice engine: " + reason);
+                        }
+                    });
+                }
             });
             
             if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {

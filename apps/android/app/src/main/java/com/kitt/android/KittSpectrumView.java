@@ -196,6 +196,9 @@ public class KittSpectrumView extends View {
                         if (read > 0) {
                             processAudioData(buffer, read);
                             post(this::invalidate);
+                        } else {
+                            applyDecayMechanism();
+                            post(this::invalidate);
                         }
 
                         Thread.sleep(50); // ~20 FPS update rate
@@ -204,6 +207,8 @@ public class KittSpectrumView extends View {
                         break;
                     } catch (Exception e) {
                         Log.e(TAG, "Error in audio processing", e);
+                        applyDecayMechanism();
+                        post(this::invalidate);
                         break;
                     }
                 }
@@ -213,6 +218,9 @@ public class KittSpectrumView extends View {
             Log.e(TAG, "Error starting audio capture", e);
         }
     }
+
+    private long lastUpdateTime = 0;
+    private static final long DECAY_TIMEOUT_MS = 500; // Decay after 500ms of no update
 
     private void processAudioData(short[] buffer, int length) {
         // Simulate a basic frequency spectrum analysis by splitting the buffer into bands
@@ -229,6 +237,9 @@ public class KittSpectrumView extends View {
             }
             bandRms[band] = (float) Math.sqrt(sum / (end - start));
         }
+        
+        // Log RMS levels for monitoring
+        Log.d(TAG, "RMS Levels - Left: " + bandRms[0] + ", Center: " + bandRms[1] + ", Right: " + bandRms[2]);
         
         // Normalize to 0-1 range with increased sensitivity for more reactivity
         float[] normalizedLevels = new float[3];
@@ -253,6 +264,19 @@ public class KittSpectrumView extends View {
         columnHeights[4][0] = 0; // Dark column
         columnHeights[5][0] = Math.max(2, rightHeight); // Active column 3 (right, based on high frequencies)
         columnHeights[6][0] = 0; // Dark column
+        
+        lastUpdateTime = System.currentTimeMillis();
+    }
+
+    private void applyDecayMechanism() {
+        long currentTime = System.currentTimeMillis();
+        if (lastUpdateTime > 0 && (currentTime - lastUpdateTime) > DECAY_TIMEOUT_MS) {
+            // Reduce the heights of active columns to prevent sticking at max
+            columnHeights[1][0] = Math.max(2, columnHeights[1][0] - 1);
+            columnHeights[3][0] = Math.max(2, columnHeights[3][0] - 1);
+            columnHeights[5][0] = Math.max(2, columnHeights[5][0] - 1);
+            Log.d(TAG, "Applying decay to VU meter heights due to timeout");
+        }
     }
 
     @Override

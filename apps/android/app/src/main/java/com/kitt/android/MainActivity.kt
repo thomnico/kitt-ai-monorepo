@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var voiceEngine: VoiceEngine
     private var currentLanguage = "en-US"
     private var interruptionStatus = "Unknown"
+    private var isVoiceRecorderActive = false
+    private var isAiTalkActive = false
     private val TAG = "MainActivity"
     
     private val requestPermissionLauncher = registerForActivityResult(
@@ -78,10 +80,20 @@ class MainActivity : ComponentActivity() {
         }
         voiceEngine.setTranscriptionCallback(object : VoiceEngine.TranscriptionCallback {
             override fun onTranscription(transcription: String) {
-            runOnUiThread {
-                transcriptionTextView.text = getString(R.string.transcription_format, transcription)
-                // This callback might not be used if Vosk output is JSON, handled in startListening
+                runOnUiThread {
+                    transcriptionTextView.text = getString(R.string.transcription_format, transcription)
+                    // This callback might not be used if Vosk output is JSON, handled in startListening
+                }
             }
+            override fun onEngineReset(reason: String) {
+                runOnUiThread {
+                    val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                    val resetMessage = "[$timestamp] RESET voice engine: $reason"
+                    detectedTextList.add(resetMessage)
+                    detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                    detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+                    transcriptionTextView.text = resetMessage
+                }
             }
         })
 
@@ -102,9 +114,9 @@ class MainActivity : ComponentActivity() {
         val buttonS1: KittButton = findViewById(R.id.buttonS1)
         val buttonS2: KittButton = findViewById(R.id.buttonS2)
         val buttonP3: KittButton = findViewById(R.id.buttonP3)
-        val buttonP4: KittButton = findViewById(R.id.buttonP4)
-        val buttonAutoCruise: KittButton = findViewById(R.id.buttonAutoCruise)
-        val buttonNormalCruise: KittButton = findViewById(R.id.buttonNormalCruise)
+        val buttonVMonitor: KittButton = findViewById(R.id.buttonP4)
+        val buttonAiTalk: KittButton = findViewById(R.id.buttonAiTalk)
+        val buttonVoiceRecorder: KittButton = findViewById(R.id.buttonVoiceRecorder)
 
         Log.i(TAG, "Setting up button listeners - Language button found: ${buttonLanguage != null}")
         
@@ -125,9 +137,13 @@ class MainActivity : ComponentActivity() {
         buttonS1.setLighted(false)
         buttonS2.setLighted(false)
         buttonP3.setLighted(false)
-        buttonP4.setLighted(false)
-        buttonAutoCruise.setLighted(false)
-        buttonNormalCruise.setLighted(false)
+        buttonVMonitor.setLighted(false)
+        
+        // Set AI Talk mode ON by default
+        buttonAiTalk.setLighted(true)
+        buttonVoiceRecorder.setLighted(false)
+        isAiTalkActive = true
+        isVoiceRecorderActive = false
 
         // Language switch functionality
         buttonLanguage.setOnClickListener { 
@@ -150,9 +166,13 @@ class MainActivity : ComponentActivity() {
         buttonS1.setOnClickListener { buttonS1.setLighted(!buttonS1.isLighted()) }
         buttonS2.setOnClickListener { buttonS2.setLighted(!buttonS2.isLighted()) }
         buttonP3.setOnClickListener { buttonP3.setLighted(!buttonP3.isLighted()) }
-        buttonP4.setOnClickListener { buttonP4.setLighted(!buttonP4.isLighted()) }
-        buttonAutoCruise.setOnClickListener { buttonAutoCruise.setLighted(!buttonAutoCruise.isLighted()) }
-        buttonNormalCruise.setOnClickListener { buttonNormalCruise.setLighted(!buttonNormalCruise.isLighted()) }
+        buttonVMonitor.setOnClickListener { 
+            buttonVMonitor.setLighted(!buttonVMonitor.isLighted())
+            toggleDiagnosticOverlay(buttonVMonitor.isLighted())
+        }
+        
+        // Setup AI Talk and Voice Recorder with mutual exclusion
+        setupAiTalkVoiceRecorderButtons(buttonAiTalk, buttonVoiceRecorder)
     }
 
     @SuppressLint("MissingPermission")
@@ -229,53 +249,68 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateSttStatus() {
-        val sttStatus = if (isListening) "🟢 LISTENING" else "🔴 STOPPED"
-        val languageText = if (currentLanguage == "fr-FR") "🇫🇷 FRENCH" else "🇺🇸 ENGLISH"
-        val engineText = "🤖 ${voiceEngine.getCurrentEngine()}"
-        
-        // Dynamically fetch GPU model using OpenGL (requires a GLSurfaceView or similar to be fully accurate)
-        // For simplicity, we'll provide a placeholder that can be updated later with actual OpenGL context
-        val gpuStatus = try {
-            "⚡ GPU: ${getGpuModel()}"
+        try {
+            val sttStatus = if (isListening) "🟢 LISTENING" else "🔴 STOPPED"
+            val languageText = if (currentLanguage == "fr-FR") "🇫🇷 FRENCH" else "🇺🇸 ENGLISH"
+            val engineText = try {
+                "🤖 ${voiceEngine.getCurrentEngine()}"
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not get engine name: ${e.message}")
+                "🤖 Unknown"
+            }
+            
+            // Safely fetch GPU model
+            val gpuStatus = try {
+                "⚡ ${getGpuModel()}"
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch GPU model: ${e.message}")
+                "⚡ GPU: Unknown"
+            }
+            
+            // Safely fetch RAM size
+            val ramStatus = try {
+                val memoryInfo = android.app.ActivityManager.MemoryInfo()
+                val activityManager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+                activityManager?.getMemoryInfo(memoryInfo)
+                val totalRamMb = memoryInfo.totalMem / (1024 * 1024) // Convert bytes to MB
+                "💾 RAM: ${totalRamMb / 1024}GB"
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch RAM size: ${e.message}")
+                "💾 RAM: Unknown"
+            }
+            
+            val statusText = """
+                $engineText | $languageText | $sttStatus
+                $gpuStatus | $ramStatus | 🎯 KITT v2.0
+            """.trimIndent()
+            
+            runOnUiThread {
+                sttStatusTextView.text = statusText
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Could not fetch GPU model: ${e.message}")
-            "⚡ GPU: Unknown"
+            Log.e(TAG, "Error updating STT status: ${e.message}")
+            runOnUiThread {
+                sttStatusTextView.text = "Status: Error updating"
+            }
         }
-        
-        // Dynamically fetch RAM size
-        val ramStatus = try {
-            val memoryInfo = android.app.ActivityManager.MemoryInfo()
-            val activityManager = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
-            activityManager.getMemoryInfo(memoryInfo)
-            val totalRamMb = memoryInfo.totalMem / (1024 * 1024) // Convert bytes to MB
-            "💾 RAM: ${totalRamMb / 1024}GB (${totalRamMb}MB)"
-        } catch (e: Exception) {
-            Log.e(TAG, "Could not fetch RAM size: ${e.message}")
-            "💾 RAM: Unknown"
-        }
-        
-        val statusText = """
-            $engineText | $languageText | $sttStatus
-            $gpuStatus | $ramStatus | 🎯 KITT v2.0
-        """.trimIndent()
-        
-        sttStatusTextView.text = statusText
     }
     
     private fun getGpuModel(): String {
-        // This is a placeholder for actual GPU detection
-        // Proper GPU detection requires an OpenGL context which might not be readily available
-        // For a fully accurate implementation, consider initializing a GLSurfaceView or similar
+        // Safe GPU detection without requiring OpenGL context
         return try {
-            val glRenderer = android.opengl.GLES10.glGetString(android.opengl.GLES10.GL_RENDERER)
-            if (glRenderer.isNotEmpty()) {
-                glRenderer
-            } else {
-                "Unknown (GL context not available)"
+            // Use Build properties to get GPU info safely
+            val manufacturer = android.os.Build.MANUFACTURER
+            val model = android.os.Build.MODEL
+            
+            // For Crosscall Core-Z5, we know it has Adreno 643
+            when {
+                model.contains("Core-Z5", ignoreCase = true) -> "Adreno 643 (Crosscall Core-Z5)"
+                manufacturer.equals("qualcomm", ignoreCase = true) -> "Adreno GPU (Qualcomm)"
+                else -> "GPU: $manufacturer $model"
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching GPU model: ${e.message}")
-            "Unknown"
+            Log.w(TAG, "Could not determine GPU model: ${e.message}")
+            "GPU: Unknown"
         }
     }
 
@@ -412,6 +447,240 @@ class MainActivity : ComponentActivity() {
         val modelText = voiceEngine.getCurrentEngine()
         button.setText(modelText)
         button.setLighted(true) // Always lighted to show current state
+    }
+
+    private fun toggleDiagnosticOverlay(show: Boolean) {
+        // This method will be expanded to show/hide diagnostic overlay for voice monitoring
+        Log.i(TAG, "Diagnostic overlay toggled: $show")
+        if (show) {
+            transcriptionTextView.text = "Voice Monitoring: ON\nRMS Levels and Processing Times in Logcat"
+        } else {
+            transcriptionTextView.text = "Voice Monitoring: OFF"
+        }
+    }
+
+    /**
+     * Setup AI Talk and Voice Recorder buttons with mutual exclusion logic
+     */
+    private fun setupAiTalkVoiceRecorderButtons(buttonAiTalk: KittButton, buttonVoiceRecorder: KittButton) {
+        Log.i(TAG, "Setting up AI Talk and Voice Recorder buttons with mutual exclusion")
+        
+        // AI Talk button click listener
+        buttonAiTalk.setOnClickListener { 
+            Log.i(TAG, "AI Talk button clicked")
+            if (!isAiTalkActive) {
+                // Activate AI Talk, deactivate Voice Recorder
+                activateAiTalk(buttonAiTalk, buttonVoiceRecorder)
+            } else {
+                // Deactivate AI Talk
+                deactivateAiTalk(buttonAiTalk)
+            }
+        }
+        
+        // Voice Recorder button click listener
+        buttonVoiceRecorder.setOnClickListener { 
+            Log.i(TAG, "Voice Recorder button clicked")
+            if (!isVoiceRecorderActive) {
+                // Activate Voice Recorder, deactivate AI Talk
+                activateVoiceRecorder(buttonVoiceRecorder, buttonAiTalk)
+            } else {
+                // Deactivate Voice Recorder
+                deactivateVoiceRecorder(buttonVoiceRecorder)
+            }
+        }
+    }
+
+    /**
+     * Activate AI Talk mode (uses existing Vosk voice recognition)
+     */
+    private fun activateAiTalk(buttonAiTalk: KittButton, buttonVoiceRecorder: KittButton) {
+        Log.i(TAG, "Activating AI Talk mode")
+        
+        // Deactivate Voice Recorder if active
+        if (isVoiceRecorderActive) {
+            deactivateVoiceRecorder(buttonVoiceRecorder)
+        }
+        
+        // Set state
+        isAiTalkActive = true
+        isVoiceRecorderActive = false
+        
+        // Update button states
+        buttonAiTalk.setLighted(true)
+        buttonVoiceRecorder.setLighted(false)
+        
+        // Start voice recognition using existing system
+        if (!isListening) {
+            try {
+                startListening()
+                transcriptionTextView.text = "AI Talk: Listening for voice commands..."
+                Log.i(TAG, "AI Talk: Started voice recognition")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start AI Talk voice recognition: ${e.message}")
+                transcriptionTextView.text = "AI Talk: Error starting voice recognition"
+                isAiTalkActive = false
+                buttonAiTalk.setLighted(false)
+            }
+        }
+    }
+
+    /**
+     * Deactivate AI Talk mode
+     */
+    private fun deactivateAiTalk(buttonAiTalk: KittButton) {
+        Log.i(TAG, "Deactivating AI Talk mode")
+        
+        isAiTalkActive = false
+        buttonAiTalk.setLighted(false)
+        
+        // Stop voice recognition if no other modes are active
+        if (isListening && !isVoiceRecorderActive) {
+            stopListening()
+            transcriptionTextView.text = "AI Talk: Stopped"
+            Log.i(TAG, "AI Talk: Stopped voice recognition")
+        }
+    }
+
+    /**
+     * Activate Voice Recorder mode (records audio and listens for "hey kit")
+     */
+    private fun activateVoiceRecorder(buttonVoiceRecorder: KittButton, buttonAiTalk: KittButton) {
+        Log.i(TAG, "Activating Voice Recorder mode")
+        
+        // Deactivate AI Talk if active
+        if (isAiTalkActive) {
+            deactivateAiTalk(buttonAiTalk)
+        }
+        
+        // Set state
+        isVoiceRecorderActive = true
+        isAiTalkActive = false
+        
+        // Update button states
+        buttonVoiceRecorder.setLighted(true)
+        buttonAiTalk.setLighted(false)
+        
+        // Start voice recorder with wake word detection
+        startVoiceRecorder()
+    }
+
+    /**
+     * Deactivate Voice Recorder mode
+     */
+    private fun deactivateVoiceRecorder(buttonVoiceRecorder: KittButton) {
+        Log.i(TAG, "Deactivating Voice Recorder mode")
+        
+        isVoiceRecorderActive = false
+        buttonVoiceRecorder.setLighted(false)
+        
+        // Stop voice recorder
+        stopVoiceRecorder()
+    }
+
+    /**
+     * Start Voice Recorder with "hey kit" wake word detection
+     */
+    @SuppressLint("MissingPermission")
+    private fun startVoiceRecorder() {
+        Log.i(TAG, "Starting Voice Recorder with wake word detection")
+        
+        try {
+            // For now, use the existing voice engine for wake word detection
+            // In a future enhancement, this could be replaced with a dedicated recorder
+            if (!isListening) {
+                voiceEngine.startListening()
+                isListening = true
+                toggleScannerAnimation(true)
+            }
+            
+            // Start monitoring for "hey kit" wake phrase
+            Thread {
+                Log.i(TAG, "Voice Recorder: Monitoring for 'hey kit' wake phrase")
+                while (isVoiceRecorderActive) {
+                    try {
+                        val partialResult = voiceEngine.processVoiceInput()
+                        if (partialResult.isNotEmpty()) {
+                            runOnUiThread {
+                                // Check for "hey kit" wake phrase
+                                if (partialResult.contains("\"text\"")) {
+                                    val textMatch = Regex("\"text\"\\s*:\\s*\"([^\"]+)\"").find(partialResult)
+                                    val textValue = textMatch?.groupValues?.get(1)?.lowercase() ?: ""
+                                    
+                                    if (textValue.contains("hey kit") || textValue.contains("hey kitt")) {
+                                        Log.i(TAG, "Voice Recorder: 'Hey Kit' wake phrase detected!")
+                                        onWakePhraseDetected()
+                                    }
+                                }
+                                
+                                // Update status
+                                transcriptionTextView.text = "Voice Recorder: Listening for 'Hey Kit'..."
+                            }
+                        }
+                        Thread.sleep(100)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in voice recorder monitoring: ${e.message}")
+                    }
+                }
+                Log.i(TAG, "Voice Recorder: Stopped monitoring")
+            }.start()
+            
+            transcriptionTextView.text = "Voice Recorder: Active - Say 'Hey Kit' to wake"
+            updateSttStatus()
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start voice recorder: ${e.message}")
+            transcriptionTextView.text = "Voice Recorder: Error starting recorder"
+            isVoiceRecorderActive = false
+        }
+    }
+
+    /**
+     * Stop Voice Recorder
+     */
+    private fun stopVoiceRecorder() {
+        Log.i(TAG, "Stopping Voice Recorder")
+        
+        // Stop listening if no other modes are active
+        if (isListening && !isAiTalkActive) {
+            voiceEngine.stopListening()
+            isListening = false
+            toggleScannerAnimation(false)
+        }
+        
+        transcriptionTextView.text = "Voice Recorder: Stopped"
+        updateSttStatus()
+    }
+
+    /**
+     * Handle wake phrase detection
+     */
+    private fun onWakePhraseDetected() {
+        Log.i(TAG, "Wake phrase 'Hey Kit' detected!")
+        
+        // Provide visual feedback
+        runOnUiThread {
+            transcriptionTextView.text = "Voice Recorder: 'Hey Kit' detected! 🎤"
+            
+            // Add detected wake phrase to the log
+            val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+            val wakeMessage = "[$timestamp] 🔊 WAKE PHRASE: Hey Kit detected"
+            detectedTextList.add(wakeMessage)
+            detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+            detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+            
+            // Flash the spectrum view to indicate detection
+            kittSpectrumView.startVisualization()
+            
+            // Auto-return to listening after a brief moment
+            Thread {
+                Thread.sleep(2000)
+                runOnUiThread {
+                    if (isVoiceRecorderActive) {
+                        transcriptionTextView.text = "Voice Recorder: Listening for 'Hey Kit'..."
+                    }
+                }
+            }.start()
+        }
     }
 
     override fun onDestroy() {
