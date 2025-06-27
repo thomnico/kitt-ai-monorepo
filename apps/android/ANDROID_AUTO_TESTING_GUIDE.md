@@ -38,7 +38,7 @@ needing a physical vehicle.
 
 ### 4. Start the Desktop Head Unit (DHU)
 
-- Connect your physical device via USB to your computer (if using a physical device), or ensure your emulator is running.
+- Connect your physical device via USB to your computer (if using a physical device), or ensure your emulator is running. USB connectivity is essential for establishing a stable connection between your device and the DHU, allowing for real-time interaction and debugging.
 - Open a terminal or command prompt.
 - Navigate to the DHU location in your SDK directory, typically at `<SDK_PATH>/extras/google/auto/`.
 - Run the following command to start the DHU:
@@ -47,8 +47,13 @@ needing a physical vehicle.
   ./desktop-head-unit
   ```
 
-- For a physical device, ensure USB debugging is enabled and accept the
-  debugging prompt. For an emulator, the DHU should automatically detect it.
+- Additionally, set up port forwarding to enable communication between the Android Auto app on your device/emulator and the DHU with the following ADB command:
+
+  ```bash
+  adb forward tcp:5277 tcp:5277
+  ```
+
+- For a physical device, ensure USB debugging is enabled and accept the debugging prompt. For an emulator, the DHU should automatically detect it.
 
 ### 5. Connect the Device/Emulator to DHU
 

@@ -9,7 +9,7 @@ android {
  
     defaultConfig {
         applicationId "com.kitt.android"
-        minSdk 30
+        minSdk 33
         targetSdk 36
         versionCode 1
         versionName "1.0"
@@ -66,6 +66,9 @@ dependencies {
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling:1.8.3'
     debugImplementation 'androidx.compose.ui:ui-test-manifest:1.8.3'
-    // Android Auto integration
-    implementation 'androidx.car.app:app:1.4.0'
+    // Android Auto integration - Updated to latest stable version
+    implementation 'androidx.car.app:app:1.7.0-beta01'
+    implementation 'androidx.car.app:app-projected:1.7.0-beta01'
+    // Bluetooth support - removed alpha version, relying on Android SDK's built-in Bluetooth APIs
+    // Bluetooth permissions are declared in AndroidManifest.xml
 }

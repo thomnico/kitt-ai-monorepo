@@ -1,10 +1,26 @@
-# Validation Plan for 2-Way Voice Interaction - KITT Android App
+# Implementation and Validation Plan - KITT Android App
 
 **Document Version:** 1.0  
 **Date:** June 22, 2025  
 **Author:** Cline (AI Assistant)  
 **Status:** Draft  
 **Target Validation Date:** Q3 2025
+
+## Android Auto Integration Plan
+
+### Compatibility for Volkswagen Golf GTE
+- **Target Models**: Focus on Volkswagen Golf GTE models from 2015 onwards equipped with the MIB2 infotainment system for Android Auto integration.
+- **Implementation Steps**:
+  - Ensure the app uses the Android for Cars App Library to create a compatible interface for Android Auto.
+  - Implement `CarAppService` to establish connection with Android Auto systems in supported vehicles.
+  - Optimize the app for minimal UI interaction, prioritizing voice commands to comply with driver distraction guidelines.
+  - Design the dashboard interface to exclude debugging text or unnecessary visual elements, ensuring a distraction-free experience.
+  - Implement voice-first interaction, making all features accessible hands-free with voice as the primary input method.
+  - Use high-contrast elements and sans-serif fonts (minimum 24sp) for readability, especially in dark mode for night driving.
+  - Design large touch targets (at least 48x48dp) to facilitate easy interaction without precise aiming.
+  - Optimize performance for low-latency responses (<200ms) to prevent driver frustration.
+- **Remote Display Mode**: This feature allows projection of the Android Auto interface to the car's display and is supported on 2015+ Golf GTE models with compatible hardware (MIB2 system).
+- **Aftermarket Solutions**: Note that for 2015 models without native Android Auto support (those with MIB1 systems), users may consider aftermarket head units or retrofitting with MIB2 systems, though these require significant modifications and are outside the scope of standard app support.
 
 ## 1. Purpose
 
@@ -28,11 +44,11 @@ This plan covers the minimal implementation of the KITT Android App, using Andro
 The following scenarios will be executed to validate the voice interaction flow:
 
 ### 4.1 Basic Speech Recognition and Response
-- **Objective**: Verify that the app can transcribe simple user input and respond audibly.
+- **Objective**: Verify that the app can transcribe simple user input and respond audibly, critical for Android Auto voice-first interaction.
 - **Input**: User says a short, clear phrase like "Hello" or "Tell me the time."
 - **Expected Output**:
-  - The app displays "Listening..." when the user presses the "Start Listening" button.
-  - The transcribed text (e.g., "Hello") appears in the TextView within 2-3 seconds after speech ends.
+  - The app indicates listening mode (via audio cue or minimal visual indicator) when activated.
+  - The transcribed text (e.g., "Hello") is processed within 2-3 seconds after speech ends, with no debugging text displayed on the Android Auto dashboard.
   - The app responds audibly with "Do you want me to repeat?" immediately after transcription.
 - **Environment**: Quiet setting to minimize background noise interference.
 
@@ -82,7 +98,8 @@ The validation will be considered successful if the following criteria are met:
   - Implement a listener reset mechanism for Vosk to prevent freezing, resetting the recognizer after 2 minutes of continuous listening to maintain performance.
   - Test end-of-speech detection and listener reset features to validate accuracy (>90% detection rate) and performance stability during extended use.
   - Optimize for Crosscall Core-Z5 hardware constraints (4GB RAM, Adreno 643 GPU) using OpenCL for acceleration.
-  - Expand functionality and UI to meet full Android Auto compliance as per PRD.
+  - Expand functionality and UI to meet full Android Auto compliance as per PRD, focusing on a distraction-free dashboard without debugging text.
+  - Implement Android Auto design guidelines, ensuring voice-first interaction, high-contrast visuals, and large touch targets for driver safety.
 
 ## 7. Validation Schedule
 

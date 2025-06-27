@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
     private var isVoiceRecorderActive = false
     private var isAiTalkActive = false
     private val TAG = "MainActivity"
+    private lateinit var bluetoothAudioService: BluetoothAudioService
     
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -102,6 +103,15 @@ class MainActivity : ComponentActivity() {
 
         updateSttStatus()
 
+        // Initialize Bluetooth Audio Service
+        bluetoothAudioService = BluetoothAudioService(this)
+        if (bluetoothAudioService.isBluetoothAvailable()) {
+            Log.d(TAG, "Bluetooth is available, routing audio")
+            bluetoothAudioService.routeAudioToBluetooth()
+        } else {
+            Log.w(TAG, "Bluetooth is not available or not enabled")
+        }
+        
         // Setup switch listeners for talk mode and language selection
         setupSwitchListeners()
     }
@@ -747,6 +757,8 @@ class MainActivity : ComponentActivity() {
         if (isListening) {
             voiceEngine.stopListening()
         }
+        // Cleanup Bluetooth service
+        bluetoothAudioService.cleanup()
         super.onDestroy()
     }
 }

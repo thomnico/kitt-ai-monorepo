@@ -7,6 +7,20 @@
 **Android Lead:** Nicolas Thomas  
 **Target Release:** Q1 2026
 
+## Android Auto Integration
+
+### Compatibility for Volkswagen Golf GTE
+- **Target Models**: The app supports Android Auto for in-car display integration, including Volkswagen Golf GTE models from 2015 onwards equipped with the MIB2 infotainment system.
+- **Remote Display Mode**: This feature allows projection of the Android Auto interface to the car's display and is supported on 2015+ Golf GTE models with compatible hardware.
+- **Aftermarket Solutions**: For 2015 models without native Android Auto support (those with MIB1 systems), aftermarket head units or retrofitting with MIB2 systems may be considered, though these require significant hardware/software modifications.
+
+### Design Guidelines for Driver Safety
+- **Minimal Distraction**: The dashboard interface must prioritize simplicity, avoiding debugging text or unnecessary visual elements to minimize cognitive load. All critical interactions must be accessible via voice commands.
+- **Voice-First Interaction**: Ensure all features can be operated hands-free, with voice as the primary input method. Every touch action must have a voice alternative.
+- **Typography and Contrast**: Use sans-serif fonts with a minimum size of 24sp for readability. Implement high-contrast elements, especially in dark mode, to reduce glare during night driving.
+- **Large Touch Targets**: Design touch targets to be at least 48x48dp to facilitate easy interaction without precise aiming, adhering to driver distraction guidelines.
+- **Performance Optimization**: Optimize the app for low-latency responses (<200ms) to prevent driver frustration, ensuring smooth transitions and immediate feedback on actions.
+
 ## Executive Summary
 
 The KITT Android App is a native Android application that brings conversational AI assistant capabilities to vehicles through Android Auto integration. Built for the Crosscall Core-Z5 and similar rugged devices, it leverages on-device AI models (Kyutai Moshi, Gemma) to provide natural voice interactions while maintaining offline-first functionality. "Offline-first" means relying on data local to the device with download and synchronization possible when a network is available.
@@ -141,17 +155,17 @@ Deliver a production-ready Android application that demonstrates the capabilitie
 
 - **Loading Time**: <10 seconds app launch
 - **Content Loading**: <10 seconds for any operation
-- **Response Time**: <2 seconds for button interactions
-- **Visual Distraction**: Minimal on-screen elements
-- **Voice Priority**: All features accessible via voice
+- **Response Time**: <2 seconds for button interactions, targeting <200ms for voice responses
+- **Visual Distraction**: Minimal on-screen elements, no debugging or extraneous text on the dashboard
+- **Voice Priority**: All features must be accessible via voice, with voice as the primary interaction method to minimize visual attention
 
 #### 3.2.3 Quality Guidelines
 
-- **Contrast**: Meet Android Auto contrast requirements
-- **Icons**: White icon sets for system colorization
-- **Text Scrolling**: No automatically scrolling text
-- **Performance**: No freezing or stuttering
-- **Error Handling**: Graceful failure with voice feedback
+- **Contrast**: Meet Android Auto contrast requirements with high-contrast elements for day and night modes
+- **Icons**: White icon sets for system colorization, ensuring visibility in all lighting conditions
+- **Text Scrolling**: No automatically scrolling text to prevent distraction
+- **Performance**: No freezing or stuttering, with optimized rendering for immediate response
+- **Error Handling**: Graceful failure with voice feedback instead of visual error messages when possible
 
 ### 3.3 Offline-First Architecture (P0)
 

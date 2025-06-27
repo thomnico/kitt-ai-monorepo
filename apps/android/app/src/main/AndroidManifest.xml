@@ -1,15 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:minSdkVersion="31" />
+
+    <!-- Android Auto permissions and features -->
+    <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
+    <uses-feature android:name="android.software.car.templates_host" android:required="false" />
 
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.KITTAndroid">
+        
+        <!-- Android Auto metadata -->
+        <meta-data android:name="com.google.android.gms.car.application" 
+                   android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="androidx.car.app.minCarApiLevel"
+            android:value="1" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -24,19 +39,22 @@
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-    <service
-        android:name=".KittCarAppService"
-        android:exported="true">
-        <intent-filter>
-            <action android:name="androidx.car.app.action.CAR_APP" />
-        </intent-filter>
-        <meta-data
-            android:name="androidx.car.app.minCarApiLevel"
-            android:value="1" />
-        <meta-data
-            android:name="androidx.car.app.category"
-            android:value="io" />
-    </service>
+        <!-- Car App Service for Android Auto -->
+        <service
+            android:name=".KittCarAppService"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+                <category android:name="androidx.car.app.category.POI" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1" />
+            <meta-data
+                android:name="androidx.car.app.library.version"
+                android:value="1.8.0" />
+        </service>
 </application>
 
 </manifest>

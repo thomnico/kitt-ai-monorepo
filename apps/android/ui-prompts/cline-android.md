@@ -1,4 +1,4 @@
-# Android Native Code Implementation for KITT K2000 Interface
+# Android Native Code Implementation for KITT K2000 Interface with Android Auto Support
 
 ## Project Structure and Setup
 
@@ -796,6 +796,15 @@ public class MainActivity extends AppCompatActivity {
 </RelativeLayout>
 ```
 
+## Android Auto UI Guidelines for Driver Safety
+
+- **Minimal Distraction**: Design the dashboard interface to exclude debugging text or unnecessary visual elements, ensuring a distraction-free experience for drivers. Focus on essential information only.
+- **Voice-First Interaction**: Implement voice as the primary input method, ensuring all features can be operated hands-free. Every touch action must have a voice alternative to minimize visual attention.
+- **Typography and Contrast**: Use sans-serif fonts with a minimum size of 24sp for readability. Implement high-contrast elements, especially in dark mode, to reduce glare during night driving.
+- **Large Touch Targets**: Design touch targets to be at least 48x48dp to facilitate easy interaction without precise aiming, adhering to driver distraction guidelines.
+- **Performance Optimization**: Optimize the app for low-latency responses (<200ms) to prevent driver frustration, ensuring smooth transitions and immediate feedback on actions.
+- **Error Handling**: Provide voice feedback for errors instead of visual messages when possible, maintaining focus on driving.
+
 ## Additional Implementation Notes
 
 ### Performance Optimizations
@@ -817,6 +826,6 @@ public class MainActivity extends AppCompatActivity {
 - Theme switching capabilities
 
 ### Analysis Guidelines
-- **Respect .gitignore Exclusions:** When analyzing the repository for code, documentation, or any other purpose, all tools and processes must respect the exclusions defined in the .gitignore files at the root and in subdirectories. This ensures that temporary, system-generated, or otherwise irrelevant files (such as .DS_Store) are not considered during analysis or included in any automated processes.
+- **Respect .gitignore Exclusions**: When analyzing the repository for code, documentation, or any other purpose, all tools and processes must respect the exclusions defined in the .gitignore files at the root and in subdirectories. This ensures that temporary, system-generated, or otherwise irrelevant files (such as .DS_Store) are not considered during analysis or included in any automated processes.
 
-This implementation provides a complete KITT K2000 interface with all requested features including the 6 side buttons, oscillating scanner lights, and real-time audio spectrum visualization.
+This implementation provides a complete KITT K2000 interface with all requested features including the 6 side buttons, oscillating scanner lights, and real-time audio spectrum visualization. For Android Auto integration, the UI is adapted to prioritize driver safety with minimal distraction, voice-first interaction, and high-contrast, readable elements as per the guidelines above.
