@@ -7,6 +7,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.graphics.Color
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.ComponentActivity
 // import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +27,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var kittSpectrumView: KittSpectrumView
     private lateinit var transcriptionTextView: TextView
     private lateinit var sttStatusTextView: TextView
+    private lateinit var detectedTextRecyclerView: RecyclerView
+    private lateinit var detectedTextAdapter: DetectedTextAdapter
+    private val detectedTextList = mutableListOf<String>()
     private var isListening = false
     private lateinit var voiceEngine: VoiceEngine
     private var currentLanguage = "en-US"
@@ -54,6 +61,15 @@ class MainActivity : ComponentActivity() {
         kittSpectrumView = findViewById(R.id.kittSpectrumView)
         transcriptionTextView = findViewById(R.id.transcriptionTextView)
         sttStatusTextView = findViewById(R.id.sttStatusTextView)
+        detectedTextRecyclerView = findViewById(R.id.detectedTextRecyclerView)
+        
+        // Setup RecyclerView for detected text
+        detectedTextAdapter = DetectedTextAdapter(detectedTextList)
+        detectedTextRecyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this).apply {
+            reverseLayout = false
+            stackFromEnd = false
+        }
+        detectedTextRecyclerView.adapter = detectedTextAdapter
 
         // Use a singleton or persistent instance for VoiceEngine to avoid re-initialization
         if (!::voiceEngine.isInitialized) {
@@ -64,6 +80,7 @@ class MainActivity : ComponentActivity() {
             override fun onTranscription(transcription: String) {
             runOnUiThread {
                 transcriptionTextView.text = getString(R.string.transcription_format, transcription)
+                // This callback might not be used if Vosk output is JSON, handled in startListening
             }
             }
         })
@@ -147,10 +164,33 @@ class MainActivity : ComponentActivity() {
                 try {
                     val partialResult = voiceEngine.processVoiceInput()
                     if (partialResult.isNotEmpty()) {
-                        Log.i(TAG, "Partial transcription: $partialResult")
-                    runOnUiThread {
-                        transcriptionTextView.text = getString(R.string.hearing_format, partialResult)
-                    }
+                        Log.i(TAG, "Partial transcription received")
+                        runOnUiThread {
+                            // Check if the result contains "partial" or "text" in JSON
+                            if (partialResult.contains("\"partial\"")) {
+                                // Extract the value of "partial" field from JSON
+                                val partialMatch = Regex("\"partial\"\\s*:\\s*\"([^\"]+)\"").find(partialResult)
+                                val partialValue = partialMatch?.groupValues?.get(1) ?: ""
+                                if (partialValue.isNotEmpty()) {
+                                    transcriptionTextView.text = partialValue
+                                }
+                            } else if (partialResult.contains("\"text\"")) {
+                                // Extract the value of "text" field from JSON
+                                val textMatch = Regex("\"text\"\\s*:\\s*\"([^\"]+)\"").find(partialResult)
+                                val textValue = textMatch?.groupValues?.get(1) ?: ""
+                                if (textValue.isNotEmpty()) {
+                                    val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                                    val formattedText = "[$timestamp] $textValue"
+                                    detectedTextList.add(formattedText)
+                                    detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                                    detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+                                    transcriptionTextView.text = textValue
+                                }
+                            } else if (partialResult.contains("Warning") || partialResult.contains("Error")) {
+                                // Display warning or error messages related to Vosk engine status
+                                transcriptionTextView.text = partialResult
+                            }
+                        }
                     }
                     Thread.sleep(100) // Adjust sleep time to balance latency and CPU usage
                 } catch (e: Exception) {
@@ -380,5 +420,27 @@ class MainActivity : ComponentActivity() {
             voiceEngine.stopListening()
         }
         super.onDestroy()
+    }
+}
+
+// Adapter for RecyclerView to display detected text
+class DetectedTextAdapter(private val textList: List<String>) : RecyclerView.Adapter<DetectedTextAdapter.ViewHolder>() {
+
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val textView: TextView = itemView.findViewById(android.R.id.text1)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_1, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.textView.text = textList[position]
+        holder.textView.setTextColor(Color.WHITE)
+    }
+
+    override fun getItemCount(): Int {
+        return textList.size
     }
 }

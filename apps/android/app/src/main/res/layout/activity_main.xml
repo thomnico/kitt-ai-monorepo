@@ -25,13 +25,17 @@
     <TextView
         android:id="@+id/transcriptionTextView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="60dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:text="Press the button to start listening..."
         android:textSize="18sp"
         android:textColor="#FFFFFF"
+        android:background="#333333"
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        android:isScrollContainer="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
@@ -39,12 +43,11 @@
     <LinearLayout
         android:id="@+id/dashboardLayout"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
         android:padding="20dp"
         app:layout_constraintTop_toBottomOf="@+id/transcriptionTextView"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -158,5 +161,20 @@
                 android:backgroundTint="#FF0000" />
         </LinearLayout>
     </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/detectedTextRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="#333333"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/dashboardLayout"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.3" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

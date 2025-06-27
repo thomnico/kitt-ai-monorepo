@@ -78,6 +78,9 @@ The validation will be considered successful if the following criteria are met:
 - **Next Steps Post-Validation**:
   - Replace the current speech recognition with Kyutai Moshi integration using native bindings for enhanced performance and accuracy.
   - Implement advanced response generation with the Gemma model for natural language understanding.
+  - Enhance voice interaction by implementing end-of-speech detection using Vosk's `acceptWaveForm()` method to accurately detect when a user's sentence is complete, ensuring smooth transitions from listening to response mode.
+  - Implement a listener reset mechanism for Vosk to prevent freezing, resetting the recognizer after 2 minutes of continuous listening to maintain performance.
+  - Test end-of-speech detection and listener reset features to validate accuracy (>90% detection rate) and performance stability during extended use.
   - Optimize for Crosscall Core-Z5 hardware constraints (4GB RAM, Adreno 643 GPU) using OpenCL for acceleration.
   - Expand functionality and UI to meet full Android Auto compliance as per PRD.
 

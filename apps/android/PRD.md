@@ -111,7 +111,15 @@ Deliver a production-ready Android application that demonstrates the capabilitie
 - **Interruption**: Support for barge-in during TTS playback
 - **Voice Customization**: Multiple voice personas
 
-#### 3.1.5 Full-Duplex Communication
+#### 3.1.5 End-of-Speech Detection
+
+- **Detection Mechanism**: Accurately detect when a user's sentence or utterance is complete using voice engine capabilities (e.g., Vosk's `acceptWaveForm()` method)
+- **Latency**: <200ms from speech end to detection of completion
+- **User Experience**: Smooth transition from listening to processing or response mode upon detection
+- **Accuracy**: 90%+ detection rate for complete sentences in supported languages
+- **Performance Maintenance**: Implement periodic listener resets (e.g., every 2 minutes) to prevent freezing or performance degradation during extended use
+
+#### 3.1.6 Full-Duplex Communication
 
 - **Simultaneous I/O**: Speak and listen simultaneously via Moshi
 - **Echo Cancellation**: Prevent feedback loops

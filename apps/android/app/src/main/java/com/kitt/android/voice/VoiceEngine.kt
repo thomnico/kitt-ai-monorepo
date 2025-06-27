@@ -45,6 +45,10 @@ class VoiceEngine(private val context: Context) {
     private var currentLanguage = "en-US"
     private var useNativeAndroid = false
     private var transcriptionCallback: TranscriptionCallback? = null
+    private var listeningStartTime: Long = 0
+    private var lastResultTime: Long = 0
+    private val RESET_THRESHOLD_MS = 60000 // 1 minute
+    private val FREEZE_TIMEOUT_MS = 10000 // 10 seconds to detect freeze
 
     /**
      * Interface for transcription callbacks.
@@ -463,7 +467,8 @@ class VoiceEngine(private val context: Context) {
                 )
                 recorder?.startRecording()
                 isListening = true
-                Log.i(TAG, "Started listening for voice input with Vosk")
+                listeningStartTime = System.currentTimeMillis()
+                Log.i(TAG, "Started listening for voice input with Vosk at $listeningStartTime")
                 return true
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start listening with Vosk: ${e.message}")
@@ -598,6 +603,7 @@ class VoiceEngine(private val context: Context) {
         }
 
         isListening = false
+        listeningStartTime = 0
         if (useNativeAndroid) {
             speechRecognizer?.stopListening()
             Log.i(TAG, "Stopped listening for voice input with Native Android")
@@ -615,7 +621,7 @@ class VoiceEngine(private val context: Context) {
 
     /**
      * Process voice input in real-time using the initialized voice engine.
-     * @return The partial result as a String if available, empty string otherwise.
+     * @return The partial or final result as a String if available, empty string otherwise.
      */
     fun processVoiceInput(): String {
         if (useNativeAndroid) {
@@ -635,19 +641,67 @@ class VoiceEngine(private val context: Context) {
             val buffer = ShortArray(BUFFER_SIZE)
             val read = recorder?.read(buffer, 0, BUFFER_SIZE) ?: 0
             if (read > 0) {
-                recognizer?.acceptWaveForm(buffer, read)
-                val partialResult = recognizer?.partialResult ?: "{}"
+                val isFinal = recognizer?.acceptWaveForm(buffer, read) ?: false
+                val result = if (isFinal) {
+                    val finalResult = recognizer?.result ?: "{}"
+                    Log.i(TAG, "Final result detected: $finalResult")
+                    transcriptionCallback?.onTranscription(finalResult)
+                    finalResult
+                } else {
+                    val partialResult = recognizer?.partialResult ?: "{}"
+                    if (partialResult.isNotEmpty()) {
+                        transcriptionCallback?.onTranscription(partialResult)
+                    }
+                    partialResult
+                }
                 val processTime = System.currentTimeMillis() - startTime
                 if (processTime > MAX_LATENCY_MS) {
                     Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
                 }
-                Log.i(TAG, "Partial voice input processed in ${processTime}ms")
-                if (partialResult.isNotEmpty()) {
-                    transcriptionCallback?.onTranscription(partialResult)
+                Log.i(TAG, "${if (isFinal) "Final" else "Partial"} voice input processed in ${processTime}ms")
+
+                // Update last result time if we have a non-empty result
+                if (result.isNotEmpty()) {
+                    lastResultTime = System.currentTimeMillis()
                 }
-                return partialResult
+
+                // Check if reset threshold is reached
+                if (listeningStartTime > 0 && (System.currentTimeMillis() - listeningStartTime) >= RESET_THRESHOLD_MS) {
+                    Log.i(TAG, "Reset threshold of ${RESET_THRESHOLD_MS/1000}s reached, resetting recognizer")
+                    resetRecognizer()
+                }
+
+                // Check for potential freeze based on last result time
+                if (lastResultTime > 0 && (System.currentTimeMillis() - lastResultTime) >= FREEZE_TIMEOUT_MS) {
+                    Log.w(TAG, "No results for ${FREEZE_TIMEOUT_MS/1000}s, potential freeze detected, resetting recognizer")
+                    resetRecognizer()
+                    transcriptionCallback?.onTranscription("Warning: Audio processing stalled, resetting engine...")
+                }
+
+                return result
             }
             return ""
+        }
+    }
+
+    /**
+     * Reset the Vosk recognizer to prevent freezing after prolonged use.
+     */
+    private fun resetRecognizer() {
+        if (!useNativeAndroid && recognizer != null) {
+            Log.i(TAG, "Resetting Vosk recognizer to prevent freezing")
+            try {
+                recognizer = null
+                model?.close()
+                model = null
+                initVoiceEngine()
+                listeningStartTime = System.currentTimeMillis()
+                lastResultTime = System.currentTimeMillis()
+                Log.i(TAG, "Recognizer reset successful, new start time: $listeningStartTime")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error resetting recognizer: ${e.message}")
+                transcriptionCallback?.onTranscription("Error: Failed to reset recognizer - ${e.message}")
+            }
         }
     }
 
