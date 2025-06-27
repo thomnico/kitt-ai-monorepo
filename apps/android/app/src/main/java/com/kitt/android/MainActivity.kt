@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
         val buttonP2: KittButton = findViewById(R.id.buttonP2)
         val buttonS1: KittButton = findViewById(R.id.buttonS1)
         val buttonS2: KittButton = findViewById(R.id.buttonS2)
-        val buttonP3: KittButton = findViewById(R.id.buttonP3)
+        val buttonStorage: KittButton = findViewById(R.id.buttonP3)
         val buttonVMonitor: KittButton = findViewById(R.id.buttonP4)
         val buttonAiTalk: KittButton = findViewById(R.id.buttonAiTalk)
         val buttonVoiceRecorder: KittButton = findViewById(R.id.buttonVoiceRecorder)
@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
         buttonP2.setLighted(false)
         buttonS1.setLighted(false)
         buttonS2.setLighted(false)
-        buttonP3.setLighted(false)
+        buttonStorage.setLighted(false)
         buttonVMonitor.setLighted(false)
         
         // Set AI Talk mode ON by default
@@ -165,7 +165,9 @@ class MainActivity : ComponentActivity() {
         buttonP2.setOnClickListener { buttonP2.setLighted(!buttonP2.isLighted()) }
         buttonS1.setOnClickListener { buttonS1.setLighted(!buttonS1.isLighted()) }
         buttonS2.setOnClickListener { buttonS2.setLighted(!buttonS2.isLighted()) }
-        buttonP3.setOnClickListener { buttonP3.setLighted(!buttonP3.isLighted()) }
+        buttonStorage.setOnClickListener { 
+            toggleStorageLocation(buttonStorage)
+        }
         buttonVMonitor.setOnClickListener { 
             buttonVMonitor.setLighted(!buttonVMonitor.isLighted())
             toggleDiagnosticOverlay(buttonVMonitor.isLighted())
@@ -459,6 +461,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun toggleStorageLocation(button: KittButton) {
+        val useExternal = !button.isLighted()
+        val success = voiceEngine.toggleStorageLocation(useExternal)
+        if (success) {
+            button.setLighted(useExternal)
+            val location = if (useExternal) "gdrive" else "local"
+            val currentStoragePath = voiceEngine.getCurrentStoragePath()
+            transcriptionTextView.text = "Storage Location: $location\nPath: $currentStoragePath"
+            Log.i(TAG, "Storage location set to $location at path: $currentStoragePath")
+        } else {
+            button.setLighted(false)
+            transcriptionTextView.text = "Failed to switch to gdrive Storage: Not Available"
+            Log.w(TAG, "Failed to toggle storage location: gdrive storage not available")
+        }
+    }
+
     /**
      * Setup AI Talk and Voice Recorder buttons with mutual exclusion logic
      */
@@ -657,18 +675,18 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "Stopping Voice Recorder")
         
         // Stop recording
-        val recordingFilePath = voiceEngine.stopRecording()
-        if (recordingFilePath != null) {
-            val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
-            val stopMessage = "[$timestamp] ⏹️ Recording Stopped"
-            detectedTextList.add(stopMessage)
-            detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
-            detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
-            transcriptionTextView.text = "Voice Recorder: Stopped"
-        } else {
-            Log.w(TAG, "No recording was active to stop")
-            transcriptionTextView.text = "Voice Recorder: Stopped (No recording active)"
-        }
+            val recordingFilePath = voiceEngine.stopRecording()
+            if (recordingFilePath != null) {
+                val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                val stopMessage = "[$timestamp] ⏹️ Recording Stopped\nPath: $recordingFilePath"
+                detectedTextList.add(stopMessage)
+                detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+                transcriptionTextView.text = "Voice Recorder: Stopped\nSaved to: $recordingFilePath"
+            } else {
+                Log.w(TAG, "No recording was active to stop")
+                transcriptionTextView.text = "Voice Recorder: Stopped (No recording active)"
+            }
         
         // Stop listening if no other modes are active
         if (isListening && !isAiTalkActive) {
@@ -686,17 +704,17 @@ class MainActivity : ComponentActivity() {
     private fun onWakePhraseDetected() {
         Log.i(TAG, "Wake phrase 'Hey Kit' detected!")
         
-        // Stop recording if active
-        if (voiceEngine.isRecordingActive()) {
-            val recordingFilePath = voiceEngine.stopRecording()
-            if (recordingFilePath != null) {
-                val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
-                val stopMessage = "[$timestamp] ⏹️ Recording Stopped - Wake Phrase Detected"
-                detectedTextList.add(stopMessage)
-                detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
-                detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+            // Stop recording if active
+            if (voiceEngine.isRecordingActive()) {
+                val recordingFilePath = voiceEngine.stopRecording()
+                if (recordingFilePath != null) {
+                    val timestamp = java.text.SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(java.util.Date())
+                    val stopMessage = "[$timestamp] ⏹️ Recording Stopped - Wake Phrase Detected\nPath: $recordingFilePath"
+                    detectedTextList.add(stopMessage)
+                    detectedTextAdapter.notifyItemInserted(detectedTextList.size - 1)
+                    detectedTextRecyclerView.scrollToPosition(detectedTextList.size - 1)
+                }
             }
-        }
         
         // Provide visual feedback
         runOnUiThread {

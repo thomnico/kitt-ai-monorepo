@@ -45,7 +45,11 @@ class VoiceEngine(private val context: Context) {
     private var mediaRecorder: MediaRecorder? = null
     private var recordingFilePath: String? = null
     private val modelPath = "${context.filesDir.absolutePath}/models/vosk"
-    private val recordingsPath = "${context.filesDir.absolutePath}/recordings"
+    private val internalRecordingsPath = "${context.filesDir.absolutePath}/recordings"
+    private var externalRecordingsPath: String? = null
+    private var useExternalStorage = false
+    private val recordingsPath: String
+        get() = if (useExternalStorage && externalRecordingsPath != null) externalRecordingsPath!! else internalRecordingsPath
     private var isListening = false
     private var isRecording = false
     private var currentModelKey = "en-us"
@@ -82,12 +86,15 @@ class VoiceEngine(private val context: Context) {
     fun initVoiceEngine(): Boolean {
         val startTime = System.currentTimeMillis()
 
-        // Ensure recordings directory exists
-        val recordingsDir = File(recordingsPath)
-        if (!recordingsDir.exists()) {
-            recordingsDir.mkdirs()
-            Log.i(TAG, "Created recordings directory: $recordingsPath")
+        // Ensure internal recordings directory exists
+        val internalRecordingsDir = File(internalRecordingsPath)
+        if (!internalRecordingsDir.exists()) {
+            internalRecordingsDir.mkdirs()
+            Log.i(TAG, "Created internal recordings directory: $internalRecordingsPath")
         }
+
+        // Attempt to set up external recordings directory
+        setupExternalStorage()
 
         if (useNativeAndroid) {
             // Initialize native Android speech recognizer
@@ -727,6 +734,70 @@ class VoiceEngine(private val context: Context) {
             isRecording = false
             return null
         }
+    }
+
+    /**
+     * Set up external storage for recordings if available.
+     */
+    private fun setupExternalStorage() {
+        try {
+            val externalDir = context.getExternalFilesDir(null)
+            if (externalDir != null) {
+                val externalPath = "${externalDir.absolutePath}/Recordings/KITT"
+                val externalRecordingsDir = File(externalPath)
+                if (!externalRecordingsDir.exists()) {
+                    externalRecordingsDir.mkdirs()
+                    Log.i(TAG, "Created external recordings directory: $externalPath")
+                }
+                externalRecordingsPath = externalPath
+                Log.i(TAG, "External storage available for recordings: $externalPath")
+            } else {
+                Log.w(TAG, "External storage not available")
+                externalRecordingsPath = null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set up external storage: ${e.message}")
+            externalRecordingsPath = null
+        }
+    }
+
+    /**
+     * Toggle between internal and external storage for recordings.
+     * @param useExternal Boolean indicating whether to use external storage if available.
+     * @return Boolean indicating if the toggle was successful.
+     */
+    fun toggleStorageLocation(useExternal: Boolean): Boolean {
+        if (useExternal && externalRecordingsPath == null) {
+            Log.w(TAG, "Cannot toggle to external storage: not available")
+            return false
+        }
+        useExternalStorage = useExternal
+        Log.i(TAG, "Storage location toggled to ${if (useExternal) "external" else "internal"} storage: $recordingsPath")
+        return true
+    }
+
+    /**
+     * Check if external storage is available for recordings.
+     * @return Boolean indicating if external storage is available.
+     */
+    fun isExternalStorageAvailable(): Boolean {
+        return externalRecordingsPath != null
+    }
+
+    /**
+     * Get the current storage location type.
+     * @return String indicating the current storage location ("internal" or "external").
+     */
+    fun getStorageLocation(): String {
+        return if (useExternalStorage && externalRecordingsPath != null) "external" else "internal"
+    }
+
+    /**
+     * Get the current storage path for recordings.
+     * @return String indicating the full path where recordings are stored.
+     */
+    fun getCurrentStoragePath(): String {
+        return recordingsPath
     }
 
     /**
