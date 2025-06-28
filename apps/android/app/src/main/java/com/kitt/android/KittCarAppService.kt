@@ -11,21 +11,51 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.model.ActionStrip
+import androidx.car.app.model.Pane
+import androidx.car.app.model.PaneTemplate
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.content.ContextCompat
 import com.kitt.android.R
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
 import android.util.Log
 import com.kitt.android.voice.VoiceEngine
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
 
 class KittCarAppService : CarAppService() {
     private val TAG = "KittCarAppService"
     private var voiceEngine: VoiceEngine? = null
+    private var audioPlaybackService: AudioPlaybackService? = null
+    private var isAudioPlaybackServiceBound = false
+
+    private val audioPlaybackServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as AudioPlaybackService.LocalBinder
+            audioPlaybackService = binder.getService()
+            isAudioPlaybackServiceBound = true
+            Log.d(TAG, "AudioPlaybackService bound successfully")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            audioPlaybackService = null
+            isAudioPlaybackServiceBound = false
+            Log.d(TAG, "AudioPlaybackService disconnected")
+        }
+    }
 
     override fun onCreateSession(): Session {
         Log.d(TAG, "Creating new session for Android Auto")
         voiceEngine = VoiceEngine(this)
         voiceEngine?.initVoiceEngine()
-        return KittSession(voiceEngine)
+
+        // Bind to AudioPlaybackService
+        val intent = Intent(this, AudioPlaybackService::class.java)
+        bindService(intent, audioPlaybackServiceConnection, Context.BIND_AUTO_CREATE)
+
+        return KittSession(voiceEngine, audioPlaybackService)
     }
 
     override fun createHostValidator(): HostValidator {
@@ -34,196 +64,83 @@ class KittCarAppService : CarAppService() {
 
     override fun onDestroy() {
         voiceEngine = null
+        if (isAudioPlaybackServiceBound) {
+            unbindService(audioPlaybackServiceConnection)
+            isAudioPlaybackServiceBound = false
+        }
         super.onDestroy()
         Log.d(TAG, "KittCarAppService destroyed")
     }
 }
 
-class KittSession(private val voiceEngine: VoiceEngine?) : Session() {
+class KittSession(private val voiceEngine: VoiceEngine?, private val audioPlaybackService: AudioPlaybackService?) : Session() {
     private val TAG = "KittSession"
     
     override fun onCreateScreen(intent: Intent): Screen {
         Log.d(TAG, "Creating main screen for Android Auto with intent: $intent")
-        return KittMainScreen(carContext, voiceEngine)
+        // Pass both voiceEngine and audioPlaybackService to the main screen
+        return KittMainScreen(carContext, voiceEngine, audioPlaybackService)
     }
 }
 
-class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceEngine: VoiceEngine?) : Screen(carContext) {
+class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceEngine: VoiceEngine?, private val audioPlaybackService: AudioPlaybackService?) : Screen(carContext) {
     private val TAG = "KittMainScreen"
     private var isVoiceActive = false
     private var currentMode = "STANDBY"
-    private var currentTab = "communication"
-    private var isRecording = false
+    private var currentTab = "communication" // This will be simplified or removed
+    private var isAssistantRecording = false // Renamed from isRecording for clarity
+    private var isAudioRecording = false // New state for file recording
     private var transcriptionText = ""
-    
+
     init {
-        Log.d(TAG, "Initializing KITT main screen for Android Auto")
+        Log.d(TAG, "KittMainScreen init: Initializing screen.")
         setupVoiceInteraction()
     }
     
     override fun onGetTemplate(): Template {
-        Log.d(TAG, "Building KITT communication dashboard template for Android Auto")
+        Log.d(TAG, "onGetTemplate: Building KITT communication dashboard template for Android Auto.")
         
-        // Using ListTemplate for navigation between tabs
-        val listBuilder = ItemList.Builder()
-        
-        // Create list items for tab navigation
-        val communicationItem = Row.Builder()
-            .setTitle("Communication")
-            .addText("Voice call and messaging options")
+        // Create rows for the list instead of actions for a pane
+        val assistantTalkRow = Row.Builder()
+            .setTitle("🗣️ Assistant Talk")
             .setOnClickListener {
-                Log.d(TAG, "Switching to Communication tab")
-                currentTab = "communication"
-                invalidate()
+                if (isAssistantRecording) {
+                    stopAssistantRecording()
+                } else {
+                    startAssistantRecording()
+                }
             }
             .build()
-            
-        val voiceModelsItem = Row.Builder()
-            .setTitle("Voice Settings")
-            .addText("Voice recognition and language options")
+
+        val recordAudioRow = Row.Builder()
+            .setTitle("🎙️ Record Audio")
             .setOnClickListener {
-                Log.d(TAG, "Switching to Voice Settings tab")
-                currentTab = "voice"
-                invalidate()
+                if (isAudioRecording) {
+                    stopAudioRecording()
+                } else {
+                    startAudioRecording()
+                }
             }
             .build()
-            
-        val assistantItem = Row.Builder()
-            .setTitle("Assistant")
-            .addText("Interact with offline assistant")
+
+        val recordingsNavigationRow = Row.Builder()
+            .setTitle("🎧 My Recordings")
             .setOnClickListener {
-                Log.d(TAG, "Switching to Assistant tab")
-                currentTab = "assistant"
-                invalidate()
+                screenManager.push(RecordingsScreen(carContext, audioPlaybackService, voiceEngine))
             }
             .build()
-            
-        listBuilder.addItem(communicationItem)
-        listBuilder.addItem(voiceModelsItem)
-        listBuilder.addItem(assistantItem)
         
-        // Add content based on the selected tab
-        when (currentTab) {
-            "communication" -> {
-                // Communication tab content
-                val statusRow = Row.Builder()
-                    .setTitle("🔴 KITT COMM SYSTEM")
-                    .addText("Status: $currentMode")
-                    .build()
-                    
-                val voiceRow = Row.Builder()
-                    .setTitle("🎤 VOICE CALLS")
-                    .addText(if (isVoiceActive) "ACTIVE CALL..." else "Say 'Hey Assistant' to make a call")
-                    .build()
-                    
-                listBuilder.addItem(statusRow)
-                listBuilder.addItem(voiceRow)
-                
-                val callItem = Row.Builder()
-                    .setTitle("Make Call")
-                    .addText("Initiate a voice call")
-                    .setOnClickListener {
-                        setMode("CALLING")
-                    }
-                    .build()
-                    
-                val messageItem = Row.Builder()
-                    .setTitle("Send Message")
-                    .addText("Send a voice-to-text message")
-                    .setOnClickListener {
-                        setMode("MESSAGING")
-                    }
-                    .build()
-                    
-                listBuilder.addItem(callItem)
-                listBuilder.addItem(messageItem)
-            }
-            "voice" -> {
-                // Voice Settings tab content
-                val voskRow = Row.Builder()
-                    .setTitle("🔊 VOSK Engine")
-                    .addText("Offline voice recognition")
-                    .build()
-                    
-                val androidRow = Row.Builder()
-                    .setTitle("🤖 Android Speech")
-                    .addText("Built-in speech recognition")
-                    .build()
-                    
-                listBuilder.addItem(voskRow)
-                listBuilder.addItem(androidRow)
-                
-                val frItem = Row.Builder()
-                    .setTitle("French")
-                    .addText("Set language to French")
-                    .setOnClickListener {
-                        setLanguage("FR")
-                    }
-                    .build()
-                    
-                val enItem = Row.Builder()
-                    .setTitle("English")
-                    .addText("Set language to English")
-                    .setOnClickListener {
-                        setLanguage("EN")
-                    }
-                    .build()
-                    
-                listBuilder.addItem(frItem)
-                listBuilder.addItem(enItem)
-            }
-            "assistant" -> {
-                // Assistant tab content
-                val statusRow = Row.Builder()
-                    .setTitle("🗣️ OFFLINE ASSISTANT")
-                    .addText(if (isRecording) "RECORDING..." else "Ready to assist")
-                    .build()
-                    
-                val transcriptionRow = Row.Builder()
-                    .setTitle("Transcription")
-                    .addText(if (transcriptionText.isEmpty()) "No transcription yet" else transcriptionText)
-                    .build()
-                    
-                listBuilder.addItem(statusRow)
-                listBuilder.addItem(transcriptionRow)
-                
-                val recordItem = Row.Builder()
-                    .setTitle(if (isRecording) "Stop Recording" else "Start Recording")
-                    .addText(if (isRecording) "Stop streaming to assistant" else "Start streaming audio to assistant")
-                    .setOnClickListener {
-                        if (isRecording) {
-                            stopRecording()
-                        } else {
-                            startRecording()
-                        }
-                    }
-                    .build()
-                    
-                listBuilder.addItem(recordItem)
-            }
-        }
+        val itemList = ItemList.Builder()
+            .addItem(assistantTalkRow)
+            .addItem(recordAudioRow)
+            .addItem(recordingsNavigationRow)
+            .build()
 
         return ListTemplate.Builder()
-            .setSingleList(listBuilder.build())
-            .setTitle("KITT Comm Dashboard - ${when (currentTab) {
-                "communication" -> "Communication"
-                "voice" -> "Voice Settings"
-                else -> "Assistant"
-            }}")
+            .setSingleList(itemList)
+            .setTitle("KITT DHU")
             .setHeaderAction(Action.APP_ICON)
             .build()
-    }
-    
-    private fun setMode(mode: String) {
-        Log.d(TAG, "Setting mode to $mode")
-        currentMode = mode
-        invalidate() // Refresh the template
-    }
-    
-    private fun setLanguage(lang: String) {
-        Log.d(TAG, "Setting language to $lang")
-        currentMode = if (lang == "FR") "French Mode" else "English Mode"
-        invalidate() // Refresh the template
     }
     
     private fun setupVoiceInteraction() {
@@ -231,6 +148,8 @@ class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceE
         voiceEngine?.setTranscriptionCallback(object : VoiceEngine.TranscriptionCallback {
             override fun onTranscription(transcription: String) {
                 transcriptionText = transcription
+                // Only invalidate if the transcription is for the assistant interaction
+                // Or if we want to show it on the main screen
                 invalidate()
             }
             override fun onEngineReset(reason: String) {
@@ -240,30 +159,53 @@ class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceE
         })
     }
     
-    private fun startRecording() {
-        Log.d(TAG, "Starting recording for assistant")
+    private fun startAssistantRecording() {
+        Log.d(TAG, "startAssistantRecording: Starting streaming to assistant.")
         if (voiceEngine?.startStreamingToAssistant() == true) {
-            isRecording = true
+            isAssistantRecording = true
             invalidate()
+            Log.d(TAG, "startAssistantRecording: Assistant recording started. Invalidating.")
         } else {
-            Log.e(TAG, "Failed to start streaming to assistant")
+            Log.e(TAG, "startAssistantRecording: Failed to start streaming to assistant.")
             transcriptionText = "Error: Failed to start streaming to assistant"
             invalidate()
         }
     }
     
-    private fun stopRecording() {
-        Log.d(TAG, "Stopping recording for assistant")
-        transcriptionText = voiceEngine?.stopListening() ?: "Stopped recording"
-        isRecording = false
+    private fun stopAssistantRecording() {
+        Log.d(TAG, "stopAssistantRecording: Stopping streaming to assistant.")
+        voiceEngine?.stopListening() // This also stops streaming to assistant
+        isAssistantRecording = false
         invalidate()
+        Log.d(TAG, "stopAssistantRecording: Assistant recording stopped. Invalidating.")
     }
-    
-    // Future integration point for voice command processing with VoiceEngine.kt
-    fun processVoiceCommand(command: String) {
-        Log.d(TAG, "Processing voice command: $command")
-        // This can be expanded for additional voice command processing logic
-        transcriptionText = "Processed command: $command"
-        invalidate()
+
+    private fun startAudioRecording() {
+        Log.d(TAG, "startAudioRecording: Starting audio recording to file.")
+        val filePath = voiceEngine?.startRecording() // VoiceEngine has startRecording()
+        if (filePath != null) {
+            isAudioRecording = true
+            transcriptionText = "Recording to: ${filePath.substringAfterLast('/')}"
+            invalidate()
+            Log.d(TAG, "startAudioRecording: Audio recording started. Invalidating.")
+        } else {
+            Log.e(TAG, "startAudioRecording: Failed to start audio recording.")
+            transcriptionText = "Error: Failed to start audio recording"
+            invalidate()
+        }
+    }
+
+    private fun stopAudioRecording() {
+        Log.d(TAG, "stopAudioRecording: Stopping audio recording to file.")
+        val filePath = voiceEngine?.stopRecording() // VoiceEngine has stopRecording()
+        if (filePath != null) {
+            isAudioRecording = false
+            transcriptionText = "Recording saved: ${filePath.substringAfterLast('/')}"
+            invalidate()
+        } else {
+            Log.e(TAG, "stopAudioRecording: Failed to stop audio recording.")
+            transcriptionText = "Error: Failed to stop audio recording"
+            invalidate()
+        }
     }
 }

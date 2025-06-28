@@ -60,6 +60,10 @@
             android:name=".OfflineAssistantService"
             android:exported="false"
             android:enabled="true" />
+        <service
+            android:name=".AudioPlaybackService"
+            android:exported="false"
+            android:enabled="true" />
 </application>
 
 </manifest>
