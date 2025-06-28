@@ -77,17 +77,14 @@ Deliver a production-ready Android application that demonstrates the capabilitie
 
 ### 2.3 AI Model Configuration
 
-- **Voice Model**: Kyutai Moshi (4-bit quantized)
-  - Size: ~4GB VRAM
-  - Framework: PyTorch/ONNX Runtime
-  - GPU Acceleration: OpenCL execution provider
-  - Languages: French/English via Helium 7B backbone
+- **Voice Model**: Vosk (small, 4-bit quantized)
+  - Size: ~50MB per language model
+  - Framework: Vosk-Android, based on Kaldi
+  - GPU Acceleration: N/A (CPU-based)
+  - Languages: French/English via pre-trained models
 
-- **Action Model**: Gemma 2B (4-bit quantized)  
-  - Size: ~1.5GB VRAM
-  - Framework: TensorFlow Lite
-  - GPU Delegate: Enabled for Adreno optimization
-  - Languages: English only
+- **Action Model**: Currently integrated directly into VoiceCommandProcessor.kt  
+  - Awaiting a suitable on-device, offline-first alternative for Gemma.
 
 ## 3. Feature Requirements
 

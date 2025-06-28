@@ -47,6 +47,16 @@ Development of a KITT-inspired conversational agent for Android Auto using on-de
 - **Kyutai STT**: Bilingual French/English support
 - **Helium 1**: 2B parameter multilingual LLM
 
+### Decision: ASR/LLM Model Selection (Vosk for ASR, Awaiting On-Device LLM)
+**Date:** 2025-06-28
+**Status:** Accepted
+**Decision Maker:** Cline (AI Agent)
+**Context:** The initial Product Requirements Document (PRD) specified Kyutai Moshi for ASR and Gemma for the action model (LLM). However, during implementation, it was found that suitable on-device, offline-first options for Kyutai Moshi and Gemma were not readily available or integrated within the current development framework.
+**Decision:** To ensure continued progress and adherence to the offline-first principle, Vosk has been adopted as the primary ASR engine. The action model (LLM) functionality is currently integrated directly into `VoiceCommandProcessor.kt` as a placeholder, awaiting the identification and integration of a suitable on-device, offline-first LLM alternative to Gemma.
+**Consequences:**
+- **Positive:** Enables immediate progress on voice interaction features, ensures offline functionality for ASR, and simplifies the initial model integration.
+- **Negative:** Requires a future effort to integrate a more advanced LLM, potentially impacting conversational AI capabilities until a suitable alternative is found. The PRD and CLAUDE.md have been updated to reflect this decision.
+
 ### GPU Optimization Strategies
 
 #### Adreno 643 Utilization

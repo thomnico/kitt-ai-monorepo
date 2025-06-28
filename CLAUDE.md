@@ -45,7 +45,7 @@ This is the KITT Framework monorepo - a cross-platform voice assistant system in
 - **Android**: Kotlin, Vosk speech recognition, Android Auto, GPU acceleration, NDK for native performance
 - **iOS**: Swift, Core ML (planned for Phase 3)
 - **Backend**: Supabase with offline-first SQLite sync
-- **AI Models**: Kyutai Moshi (voice), Gemma (responses) with quantization for mobile
+- **AI Models**: Vosk (voice), Action model integrated directly into VoiceCommandProcessor.kt (placeholder for on-device LLM)
 - **Target Hardware**: Crosscall Core-Z5 (4GB RAM, Adreno 643 GPU, rugged design)
 
 ## Development Commands

@@ -2,6 +2,7 @@ package com.kitt.android.voice
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -9,6 +10,7 @@ import android.speech.SpeechRecognizer
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.util.Log
+import com.kitt.android.OfflineAssistantService
 import org.vosk.Model
 import org.vosk.Recognizer
 import java.io.File
@@ -19,6 +21,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.io.FileOutputStream
 import android.os.Bundle
+import android.os.IBinder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -62,6 +65,8 @@ class VoiceEngine(private val context: Context) {
     private val RESET_THRESHOLD_MS = 60000 // 1 minute
     private val FREEZE_TIMEOUT_MS = 10000 // 10 seconds to detect freeze
     private val RMS_ZERO_TIMEOUT_MS = 10000 // 10 seconds to detect RMS at 0
+    private var assistantService: OfflineAssistantService? = null
+    private var isStreamingToAssistant = false
 
     /**
      * Interface for transcription callbacks.
@@ -85,6 +90,8 @@ class VoiceEngine(private val context: Context) {
      */
     fun initVoiceEngine(): Boolean {
         val startTime = System.currentTimeMillis()
+        // Bind to OfflineAssistantService
+        bindToAssistantService()
 
         // Ensure internal recordings directory exists
         val internalRecordingsDir = File(internalRecordingsPath)
@@ -633,42 +640,6 @@ class VoiceEngine(private val context: Context) {
         }
     }
 
-    /**
-     * Stop listening for voice input.
-     * @return The final processed result as a String.
-     */
-    fun stopListening(): String {
-        if (!isListening) {
-            Log.w(TAG, "Not currently listening")
-            // Ensure resources are released even if not listening
-            if (useNativeAndroid) {
-                speechRecognizer?.stopListening()
-                Log.i(TAG, "Ensured Native Android recognizer is stopped")
-            } else {
-                recorder?.stop()
-                recorder?.release()
-                recorder = null
-                Log.i(TAG, "Ensured Vosk recorder is stopped and released")
-            }
-            return "Error: Not listening"
-        }
-
-        isListening = false
-        listeningStartTime = 0
-        if (useNativeAndroid) {
-            speechRecognizer?.stopListening()
-            Log.i(TAG, "Stopped listening for voice input with Native Android")
-            return "Stopped Native Android listening"
-        } else {
-            recorder?.stop()
-            recorder?.release()
-            recorder = null
-            val finalResult = recognizer?.result ?: "{}"
-            Log.i(TAG, "Stopped listening for voice input with Vosk")
-            transcriptionCallback?.onTranscription(finalResult)
-            return finalResult
-        }
-    }
 
     /**
      * Start audio recording.
@@ -705,6 +676,79 @@ class VoiceEngine(private val context: Context) {
             recordingFilePath = null
             isRecording = false
             return null
+        }
+    }
+
+    /**
+     * Start streaming audio to the offline assistant service.
+     * @return Boolean indicating if streaming started successfully.
+     */
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    fun startStreamingToAssistant(): Boolean {
+        if (isStreamingToAssistant) {
+            Log.w(TAG, "Already streaming to assistant")
+            return true
+        }
+
+        if (assistantService == null) {
+            Log.e(TAG, "Assistant service not bound")
+            bindToAssistantService()
+            if (assistantService == null) {
+                Log.e(TAG, "Failed to bind to assistant service")
+                return false
+            }
+        }
+
+        try {
+            assistantService?.startProcessing()
+            assistantService?.setResponseCallback { response ->
+                transcriptionCallback?.onTranscription(response)
+            }
+            isStreamingToAssistant = true
+            Log.i(TAG, "Started streaming to assistant service")
+            if (!isListening) {
+                return startListening()
+            }
+            return true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start streaming to assistant: ${e.message}")
+            return false
+        }
+    }
+
+    /**
+     * Bind to the OfflineAssistantService.
+     */
+    private fun bindToAssistantService() {
+        try {
+            val intent = Intent(context, OfflineAssistantService::class.java)
+            // Start the service explicitly to ensure it is running
+            context.startService(intent)
+            context.bindService(intent, object : android.content.ServiceConnection {
+                override fun onServiceConnected(name: android.content.ComponentName?, service: IBinder?) {
+                    assistantService = (service as OfflineAssistantService.LocalBinder).getService()
+                    Log.i(TAG, "Bound to OfflineAssistantService")
+                    // Attempt to start streaming if we were waiting for the service
+                    if (isStreamingToAssistant && !isListening) {
+                        Log.i(TAG, "Service bound, attempting to start streaming")
+                        startStreamingToAssistant()
+                    }
+                }
+
+                override fun onServiceDisconnected(name: android.content.ComponentName?) {
+                    assistantService = null
+                    Log.w(TAG, "Disconnected from OfflineAssistantService")
+                    // Attempt to rebind on disconnection
+                    bindToAssistantService()
+                }
+            }, Context.BIND_AUTO_CREATE)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to bind to OfflineAssistantService: ${e.message}")
+            // Retry binding after a short delay
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                Log.i(TAG, "Retrying binding to OfflineAssistantService")
+                bindToAssistantService()
+            }, 1000)
         }
     }
 
@@ -821,8 +865,8 @@ class VoiceEngine(private val context: Context) {
             // Native Android processing is handled via callbacks in RecognitionListener
             return ""
         } else {
-            if (recorder == null || !isListening || recognizer == null) {
-                Log.e(TAG, "Vosk voice engine not initialized or not listening")
+            if (recorder == null || !isListening) {
+                Log.e(TAG, "Voice engine not initialized or not listening")
                 return ""
             }
 
@@ -851,54 +895,109 @@ class VoiceEngine(private val context: Context) {
                     lastRmsZeroTime = 0L // Reset timer if RMS is not 0
                 }
 
-                val isFinal = recognizer?.acceptWaveForm(buffer, read) ?: false
-                val result = if (isFinal) {
-                    val finalResult = recognizer?.result ?: "{}"
-                    Log.i(TAG, "Final result detected: $finalResult")
-                    transcriptionCallback?.onTranscription(finalResult)
-                    finalResult
+                // Stream to assistant service if enabled
+                if (isStreamingToAssistant && assistantService != null) {
+                    assistantService?.processAudioBuffer(buffer, read)
+                    return ""
                 } else {
-                    val partialResult = recognizer?.partialResult ?: "{}"
-                    if (partialResult.isNotEmpty()) {
-                        transcriptionCallback?.onTranscription(partialResult)
+                    if (recognizer == null) {
+                        Log.e(TAG, "Vosk recognizer not initialized")
+                        return ""
                     }
-                    partialResult
-                }
-                val processTime = System.currentTimeMillis() - startTime
-                if (processTime > MAX_LATENCY_MS) {
-                    Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
-                }
-                Log.d(TAG, "${if (isFinal) "Final" else "Partial"} voice input processed in ${processTime}ms")
+                    val isFinal = recognizer?.acceptWaveForm(buffer, read) ?: false
+                    val result = if (isFinal) {
+                        val finalResult = recognizer?.result ?: "{}"
+                        Log.i(TAG, "Final result detected: $finalResult")
+                        transcriptionCallback?.onTranscription(finalResult)
+                        finalResult
+                    } else {
+                        val partialResult = recognizer?.partialResult ?: "{}"
+                        if (partialResult.isNotEmpty()) {
+                            transcriptionCallback?.onTranscription(partialResult)
+                        }
+                        partialResult
+                    }
+                    val processTime = System.currentTimeMillis() - startTime
+                    if (processTime > MAX_LATENCY_MS) {
+                        Log.w(TAG, "Voice processing exceeded latency target: ${processTime}ms")
+                    }
+                    Log.d(TAG, "${if (isFinal) "Final" else "Partial"} voice input processed in ${processTime}ms")
 
-                // Update last result time if we have a non-empty result
-                if (result.isNotEmpty()) {
-                    lastResultTime = System.currentTimeMillis()
-                }
+                    // Update last result time if we have a non-empty result
+                    if (result.isNotEmpty()) {
+                        lastResultTime = System.currentTimeMillis()
+                    }
 
-                // Check if reset threshold is reached
-                if (listeningStartTime > 0 && (System.currentTimeMillis() - listeningStartTime) >= RESET_THRESHOLD_MS) {
-                    Log.i(TAG, "Reset threshold of ${RESET_THRESHOLD_MS/1000}s reached, resetting recognizer")
-                    resetRecognizer()
-                }
+                    // Check if reset threshold is reached
+                    if (listeningStartTime > 0 && (System.currentTimeMillis() - listeningStartTime) >= RESET_THRESHOLD_MS) {
+                        Log.i(TAG, "Reset threshold of ${RESET_THRESHOLD_MS/1000}s reached, resetting recognizer")
+                        resetRecognizer()
+                    }
 
-                // Check for potential freeze based on last result time
-                if (lastResultTime > 0 && (System.currentTimeMillis() - lastResultTime) >= FREEZE_TIMEOUT_MS) {
-                    Log.w(TAG, "No results for ${FREEZE_TIMEOUT_MS/1000}s, potential freeze detected, resetting recognizer")
-                    resetRecognizer("Potential freeze detected")
-                    transcriptionCallback?.onTranscription("Warning: Audio processing stalled, resetting engine...")
-                }
+                    // Check for potential freeze based on last result time
+                    if (lastResultTime > 0 && (System.currentTimeMillis() - lastResultTime) >= FREEZE_TIMEOUT_MS) {
+                        Log.w(TAG, "No results for ${FREEZE_TIMEOUT_MS/1000}s, potential freeze detected, resetting recognizer")
+                        resetRecognizer("Potential freeze detected")
+                        transcriptionCallback?.onTranscription("Warning: Audio processing stalled, resetting engine...")
+                    }
 
-                return result
+                    return result
+                }
             }
             return ""
         }
     }
 
     /**
-     * Switch between engines.
-     * @param useNative Boolean indicating whether to use native Android STT (true) or Vosk (false).
+     * Stop listening for voice input.
+     * @return The final processed result as a String.
      */
-    private fun switchToNativeAndroid(useNative: Boolean) {
+    fun stopListening(): String {
+        if (!isListening) {
+            Log.w(TAG, "Not currently listening")
+            // Ensure resources are released even if not listening
+            if (useNativeAndroid) {
+                speechRecognizer?.stopListening()
+                Log.i(TAG, "Ensured Native Android recognizer is stopped")
+            } else {
+                recorder?.stop()
+                recorder?.release()
+                recorder = null
+                Log.i(TAG, "Ensured Vosk recorder is stopped and released")
+            }
+            return "Error: Not listening"
+        }
+
+        isListening = false
+        listeningStartTime = 0
+        if (useNativeAndroid) {
+            speechRecognizer?.stopListening()
+            Log.i(TAG, "Stopped listening for voice input with Native Android")
+            return "Stopped Native Android listening"
+        } else {
+            recorder?.stop()
+            recorder?.release()
+            recorder = null
+            if (isStreamingToAssistant && assistantService != null) {
+                val response = assistantService?.stopProcessing() ?: "Stopped streaming to assistant"
+                Log.i(TAG, "Stopped streaming to assistant service")
+                isStreamingToAssistant = false
+                return response
+            } else {
+                val finalResult = recognizer?.result ?: "{}"
+                Log.i(TAG, "Stopped listening for voice input with Vosk")
+                transcriptionCallback?.onTranscription(finalResult)
+                return finalResult
+            }
+        }
+    }
+
+    /**
+     * Switch between engines.
+     * @param engine The engine to switch to ("VOSK" or "ANDROID").
+     */
+    fun switchEngine(engine: String) {
+        val useNative = engine.uppercase() == "ANDROID"
         Log.i(TAG, "Switching to ${if (useNative) "Native Android" else "Vosk"} engine")
         useNativeAndroid = useNative
         // Ensure any ongoing listening is stopped
@@ -924,19 +1023,10 @@ class VoiceEngine(private val context: Context) {
     }
 
     /**
-     * Get the current engine being used.
+     * Get the current engine type.
      * @return String indicating the current engine ("VOSK" or "ANDROID").
      */
     fun getCurrentEngine(): String {
         return if (useNativeAndroid) "ANDROID" else "VOSK"
-    }
-
-    /**
-     * Switch between engines.
-     * @param engine The engine to switch to ("VOSK" or "ANDROID").
-     */
-    fun switchEngine(engine: String) {
-        val useNative = engine.uppercase() == "ANDROID"
-        switchToNativeAndroid(useNative)
     }
 }

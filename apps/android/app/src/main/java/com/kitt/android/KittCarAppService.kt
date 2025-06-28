@@ -1,132 +1,269 @@
 package com.kitt.android
 
+import android.content.Intent
 import androidx.car.app.CarAppService
-import androidx.car.app.Session
 import androidx.car.app.validation.HostValidator
+import androidx.car.app.Screen
+import androidx.car.app.Session
+import androidx.car.app.model.Action
+import androidx.car.app.model.ItemList
+import androidx.car.app.model.ListTemplate
+import androidx.car.app.model.Row
+import androidx.car.app.model.Template
+import androidx.car.app.model.ActionStrip
+import androidx.core.graphics.drawable.IconCompat
+import androidx.core.content.ContextCompat
+import com.kitt.android.R
+import android.util.Log
+import com.kitt.android.voice.VoiceEngine
 
 class KittCarAppService : CarAppService() {
     private val TAG = "KittCarAppService"
-    
+    private var voiceEngine: VoiceEngine? = null
+
     override fun onCreateSession(): Session {
-        android.util.Log.d(TAG, "Creating new Android Auto session")
-        return KittSession()
-    }
-    
-    // Ensure the service starts with minimal latency for driver interaction
-    override fun onStartCommand(intent: android.content.Intent?, flags: Int, startId: Int): Int {
-        android.util.Log.d(TAG, "Starting KittCarAppService for Android Auto")
-        return super.onStartCommand(intent, flags, startId)
+        Log.d(TAG, "Creating new session for Android Auto")
+        voiceEngine = VoiceEngine(this)
+        voiceEngine?.initVoiceEngine()
+        return KittSession(voiceEngine)
     }
 
     override fun createHostValidator(): HostValidator {
-        android.util.Log.d(TAG, "Creating host validator for Android Auto")
         return HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
     }
-    
-    override fun onCreate() {
-        super.onCreate()
-        android.util.Log.d(TAG, "KittCarAppService created for Android Auto")
-    }
-    
+
     override fun onDestroy() {
+        voiceEngine = null
         super.onDestroy()
-        android.util.Log.d(TAG, "KittCarAppService destroyed")
+        Log.d(TAG, "KittCarAppService destroyed")
     }
 }
 
-class KittSession : Session() {
+class KittSession(private val voiceEngine: VoiceEngine?) : Session() {
     private val TAG = "KittSession"
     
-    override fun onCreateScreen(intent: android.content.Intent): androidx.car.app.Screen {
-        android.util.Log.d(TAG, "Creating main screen for Android Auto with intent: $intent")
-        return KittMainScreen(carContext)
+    override fun onCreateScreen(intent: Intent): Screen {
+        Log.d(TAG, "Creating main screen for Android Auto with intent: $intent")
+        return KittMainScreen(carContext, voiceEngine)
     }
 }
 
-class KittMainScreen(carContext: androidx.car.app.CarContext) : androidx.car.app.Screen(carContext) {
+class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceEngine: VoiceEngine?) : Screen(carContext) {
     private val TAG = "KittMainScreen"
     private var isVoiceActive = false
     private var currentMode = "STANDBY"
+    private var currentTab = "communication"
+    private var isRecording = false
+    private var transcriptionText = ""
     
     init {
-        android.util.Log.d(TAG, "Initializing KITT main screen for Android Auto")
+        Log.d(TAG, "Initializing KITT main screen for Android Auto")
         setupVoiceInteraction()
     }
     
-    override fun onGetTemplate(): androidx.car.app.model.Template {
-        android.util.Log.d(TAG, "Building KITT dashboard template for Android Auto")
+    override fun onGetTemplate(): Template {
+        Log.d(TAG, "Building KITT communication dashboard template for Android Auto")
         
-        // Create KITT-style status rows without debugging text
-        val statusRow = androidx.car.app.model.Row.Builder()
-            .setTitle("🔴 KITT AI SYSTEMS")
-            .addText("Status: $currentMode")
+        // Using ListTemplate for navigation between tabs
+        val listBuilder = ItemList.Builder()
+        
+        // Create list items for tab navigation
+        val communicationItem = Row.Builder()
+            .setTitle("Communication")
+            .addText("Voice call and messaging options")
+            .setOnClickListener {
+                Log.d(TAG, "Switching to Communication tab")
+                currentTab = "communication"
+                invalidate()
+            }
             .build()
             
-        val voiceRow = androidx.car.app.model.Row.Builder()
-            .setTitle("🎤 VOICE INTERFACE")
-            .addText(if (isVoiceActive) "LISTENING..." else "Say 'Hey Assistant' to activate")
+        val voiceModelsItem = Row.Builder()
+            .setTitle("Voice Settings")
+            .addText("Voice recognition and language options")
+            .setOnClickListener {
+                Log.d(TAG, "Switching to Voice Settings tab")
+                currentTab = "voice"
+                invalidate()
+            }
             .build()
             
-        val scannerRow = androidx.car.app.model.Row.Builder()
-            .setTitle("📡 SCANNER ARRAY")
-            .addText("Frequency monitoring active")
+        val assistantItem = Row.Builder()
+            .setTitle("Assistant")
+            .addText("Interact with offline assistant")
+            .setOnClickListener {
+                Log.d(TAG, "Switching to Assistant tab")
+                currentTab = "assistant"
+                invalidate()
+            }
             .build()
             
-        val spectrumRow = androidx.car.app.model.Row.Builder()
-            .setTitle("📊 SPECTRUM ANALYZER")
-            .addText("Audio analysis running")
-            .build()
+        listBuilder.addItem(communicationItem)
+        listBuilder.addItem(voiceModelsItem)
+        listBuilder.addItem(assistantItem)
+        
+        // Add content based on the selected tab
+        when (currentTab) {
+            "communication" -> {
+                // Communication tab content
+                val statusRow = Row.Builder()
+                    .setTitle("🔴 KITT COMM SYSTEM")
+                    .addText("Status: $currentMode")
+                    .build()
+                    
+                val voiceRow = Row.Builder()
+                    .setTitle("🎤 VOICE CALLS")
+                    .addText(if (isVoiceActive) "ACTIVE CALL..." else "Say 'Hey Assistant' to make a call")
+                    .build()
+                    
+                listBuilder.addItem(statusRow)
+                listBuilder.addItem(voiceRow)
+                
+                val callItem = Row.Builder()
+                    .setTitle("Make Call")
+                    .addText("Initiate a voice call")
+                    .setOnClickListener {
+                        setMode("CALLING")
+                    }
+                    .build()
+                    
+                val messageItem = Row.Builder()
+                    .setTitle("Send Message")
+                    .addText("Send a voice-to-text message")
+                    .setOnClickListener {
+                        setMode("MESSAGING")
+                    }
+                    .build()
+                    
+                listBuilder.addItem(callItem)
+                listBuilder.addItem(messageItem)
+            }
+            "voice" -> {
+                // Voice Settings tab content
+                val voskRow = Row.Builder()
+                    .setTitle("🔊 VOSK Engine")
+                    .addText("Offline voice recognition")
+                    .build()
+                    
+                val androidRow = Row.Builder()
+                    .setTitle("🤖 Android Speech")
+                    .addText("Built-in speech recognition")
+                    .build()
+                    
+                listBuilder.addItem(voskRow)
+                listBuilder.addItem(androidRow)
+                
+                val frItem = Row.Builder()
+                    .setTitle("French")
+                    .addText("Set language to French")
+                    .setOnClickListener {
+                        setLanguage("FR")
+                    }
+                    .build()
+                    
+                val enItem = Row.Builder()
+                    .setTitle("English")
+                    .addText("Set language to English")
+                    .setOnClickListener {
+                        setLanguage("EN")
+                    }
+                    .build()
+                    
+                listBuilder.addItem(frItem)
+                listBuilder.addItem(enItem)
+            }
+            "assistant" -> {
+                // Assistant tab content
+                val statusRow = Row.Builder()
+                    .setTitle("🗣️ OFFLINE ASSISTANT")
+                    .addText(if (isRecording) "RECORDING..." else "Ready to assist")
+                    .build()
+                    
+                val transcriptionRow = Row.Builder()
+                    .setTitle("Transcription")
+                    .addText(if (transcriptionText.isEmpty()) "No transcription yet" else transcriptionText)
+                    .build()
+                    
+                listBuilder.addItem(statusRow)
+                listBuilder.addItem(transcriptionRow)
+                
+                val recordItem = Row.Builder()
+                    .setTitle(if (isRecording) "Stop Recording" else "Start Recording")
+                    .addText(if (isRecording) "Stop streaming to assistant" else "Start streaming audio to assistant")
+                    .setOnClickListener {
+                        if (isRecording) {
+                            stopRecording()
+                        } else {
+                            startRecording()
+                        }
+                    }
+                    .build()
+                    
+                listBuilder.addItem(recordItem)
+            }
+        }
 
-        // Create action buttons for KITT functions
-        val langAction = androidx.car.app.model.Action.Builder()
-            .setTitle("LANG")
-            .setOnClickListener { toggleLanguage() }
-            .build()
-            
-        val voskAction = androidx.car.app.model.Action.Builder()
-            .setTitle("VOSK")
-            .setOnClickListener { checkVoiceModel() }
-            .build()
-
-        val paneBuilder = androidx.car.app.model.Pane.Builder()
-            .addRow(statusRow)
-            .addRow(voiceRow)
-            .addRow(scannerRow)
-            .addRow(spectrumRow)
-            .addAction(langAction)
-            .addAction(voskAction)
-            .setLoading(false)
-
-        return androidx.car.app.model.PaneTemplate.Builder(paneBuilder.build())
-            .setHeaderAction(androidx.car.app.model.Action.APP_ICON)
-            .setTitle("KITT AI Dashboard")
+        return ListTemplate.Builder()
+            .setSingleList(listBuilder.build())
+            .setTitle("KITT Comm Dashboard - ${when (currentTab) {
+                "communication" -> "Communication"
+                "voice" -> "Voice Settings"
+                else -> "Assistant"
+            }}")
+            .setHeaderAction(Action.APP_ICON)
             .build()
     }
     
-    private fun toggleLanguage() {
-        android.util.Log.d(TAG, "Language toggle requested")
-        // Toggle between ENG/FR
-        currentMode = if (currentMode == "ENG") "FR" else "ENG"
+    private fun setMode(mode: String) {
+        Log.d(TAG, "Setting mode to $mode")
+        currentMode = mode
         invalidate() // Refresh the template
     }
     
-    private fun checkVoiceModel() {
-        android.util.Log.d(TAG, "Voice model check requested")
-        currentMode = "VOICE_CHECK"
+    private fun setLanguage(lang: String) {
+        Log.d(TAG, "Setting language to $lang")
+        currentMode = if (lang == "FR") "French Mode" else "English Mode"
         invalidate() // Refresh the template
     }
     
     private fun setupVoiceInteraction() {
-        android.util.Log.d(TAG, "Setting up voice interaction for Android Auto")
-        // Placeholder for voice engine initialization
-        // This will integrate with VoiceEngine.kt for wake word detection and command processing
-        // Ensure voice-first interaction as per Android Auto guidelines for driver safety
+        Log.d(TAG, "Setting up voice interaction for Android Auto")
+        voiceEngine?.setTranscriptionCallback(object : VoiceEngine.TranscriptionCallback {
+            override fun onTranscription(transcription: String) {
+                transcriptionText = transcription
+                invalidate()
+            }
+            override fun onEngineReset(reason: String) {
+                transcriptionText = "Engine reset: $reason"
+                invalidate()
+            }
+        })
+    }
+    
+    private fun startRecording() {
+        Log.d(TAG, "Starting recording for assistant")
+        if (voiceEngine?.startStreamingToAssistant() == true) {
+            isRecording = true
+            invalidate()
+        } else {
+            Log.e(TAG, "Failed to start streaming to assistant")
+            transcriptionText = "Error: Failed to start streaming to assistant"
+            invalidate()
+        }
+    }
+    
+    private fun stopRecording() {
+        Log.d(TAG, "Stopping recording for assistant")
+        transcriptionText = voiceEngine?.stopListening() ?: "Stopped recording"
+        isRecording = false
+        invalidate()
     }
     
     // Future integration point for voice command processing with VoiceEngine.kt
     fun processVoiceCommand(command: String) {
-        android.util.Log.d(TAG, "Processing voice command: $command")
-        // Placeholder for voice command processing logic
-        // This will be integrated with VoiceEngine.kt for full voice-first interaction
+        Log.d(TAG, "Processing voice command: $command")
+        // This can be expanded for additional voice command processing logic
+        transcriptionText = "Processed command: $command"
+        invalidate()
     }
 }

@@ -46,7 +46,7 @@
             android:enabled="true">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.POI" />
+                <category android:name="androidx.car.app.category.COMMUNICATION" />
             </intent-filter>
             <meta-data
                 android:name="androidx.car.app.minCarApiLevel"
@@ -55,6 +55,11 @@
                 android:name="androidx.car.app.library.version"
                 android:value="1.8.0" />
         </service>
+        <!-- Offline Assistant Service for voice processing -->
+        <service
+            android:name=".OfflineAssistantService"
+            android:exported="false"
+            android:enabled="true" />
 </application>
 
 </manifest>
