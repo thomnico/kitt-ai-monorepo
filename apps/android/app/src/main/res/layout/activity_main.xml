@@ -4,20 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#000000"
     tools:context=".MainActivity">
-
-    <TextView
-        android:id="@+id/transcriptionTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:text="Press the button to start listening..."
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
 
     <TextView
         android:id="@+id/sttStatusTextView"
@@ -34,45 +22,159 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/startListeningButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Start Listening"
-        app:layout_constraintBottom_toTopOf="@+id/readCguButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ImageView
-        android:id="@+id/micActivityIndicator"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@android:drawable/ic_lock_silent_mode_off"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <TextView
+        android:id="@+id/transcriptionTextView"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Press the button to start listening..."
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:background="#333333"
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        android:isScrollContainer="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/sttStatusTextView" />
 
-    <Button
-        android:id="@+id/readCguButton"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/dashboardLayout"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Read CGU for Interruption"
-        app:layout_constraintBottom_toTopOf="@+id/downloadMoshiButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="20dp"
+        app:layout_constraintTop_toBottomOf="@+id/transcriptionTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <Button
-        android:id="@+id/downloadMoshiButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        <LinearLayout
+            android:id="@+id/leftButtonColumn"
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginEnd="20dp">
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonLang"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="EN"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFAA00" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonVosk"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="VOSK"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FFAA00" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP1"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="P1"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP2"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="P2"
+                android:backgroundTint="#FF0000" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/centerContent"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <com.kitt.android.KittSpectrumView
+                android:id="@+id/kittSpectrumView"
+                android:layout_width="200dp"
+                android:layout_height="120dp"
+                android:layout_marginBottom="20dp" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonAiTalk"
+                android:layout_width="140dp"
+                android:layout_height="50dp"
+                android:text="AI\nTALK"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="#FF4500" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonVoiceRecorder"
+                android:layout_width="140dp"
+                android:layout_height="50dp"
+                android:text="VOICE\nRECORDER"
+                android:backgroundTint="#333333" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rightButtonColumn"
+            android:layout_width="80dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="20dp">
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonS1"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="S1"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonS2"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="S2"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP3"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="P3"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#FF0000" />
+
+            <com.kitt.android.KittButton
+                android:id="@+id/buttonP4"
+                android:layout_width="80dp"
+                android:layout_height="50dp"
+                android:text="VMonitor"
+                android:backgroundTint="#FF0000" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/detectedTextRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:text="Download Moshi Model"
+        android:background="#333333"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/dashboardLayout"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHeight_percent="0.3" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

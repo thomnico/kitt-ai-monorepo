@@ -1,0 +1,16 @@
+{
+  "models": {
+    "en-us": {
+      "path": "vosk-model-small-en-us-0.15.zip",
+      "language": "English (US)",
+      "size": "small"
+    },
+    "fr": {
+      "path": "vosk-model-small-fr-0.22.zip",
+      "language": "French",
+      "size": "small"
+    }
+  },
+  "default_model": "en-us",
+  "description": "Configuration file for Vosk speech recognition models used in the KITT Framework Android app. Models are stored in the assets directory for offline use."
+}

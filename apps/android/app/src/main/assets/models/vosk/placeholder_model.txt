@@ -1,0 +1,10 @@
+# Vosk Model Placeholder
+
+This file serves as a placeholder for documentation purposes. The actual Vosk models used in this project are:
+
+- vosk-model-small-en-us-0.15.zip (English)
+- vosk-model-small-fr-0.22.zip (French)
+
+These models are stored in the same directory as this placeholder file. They are used for offline speech recognition in the KITT Assistant app.
+
+For more information on Vosk integration, refer to the documentation in the `packages/voice/docs/vosk-integration.md` file.

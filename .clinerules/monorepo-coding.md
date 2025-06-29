@@ -41,6 +41,17 @@ These are the core, non-negotiable principles for developing within the KITT Fra
 - **One Lockfile to Rule Them All:** All dependencies are managed through the root `package.json` and its associated lockfile. No project-specific lockfiles.
 - **Internal Packages are First-Class Citizens:** Shared code in `/packages/` must be treated as a versioned, internal dependency.
 
+### Rule 8: Utilize Screenshot Features for Analysis When Available
+
+- **Capture and Analyze Visual Output:** Whenever possible, use ADB or Android CLI tools to capture screenshots of the app for testing and verification purposes. When image analysis models or tools become available, integrate them to programmatically analyze screenshots and validate expected UI or functional results.
+- **Organize Screenshots:** Store captured screenshots in a designated directory (e.g., `apps/android/screenshots/`) with timestamps or relevant identifiers to maintain organization and traceability.
+
+---
+
+### Rule 9: Use .gitignore as the Source for File Exclusions in Analysis
+
+- **Respect .gitignore Exclusions:** When analyzing the repository for code, documentation, or any other purpose, all tools and processes must respect the exclusions defined in the .gitignore files at the root and in subdirectories. This ensures that temporary, system-generated, or otherwise irrelevant files (such as .DS_Store) are not considered during analysis or included in any automated processes.
+
 ---
 
 These rules are the blueprint for our success. They ensure we build a framework that is fast, reliable, legally sound, and maintainable.
