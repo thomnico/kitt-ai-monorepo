@@ -129,11 +129,21 @@ class KittMainScreen(carContext: androidx.car.app.CarContext, private val voiceE
                 screenManager.push(RecordingsScreen(carContext, audioPlaybackService, voiceEngine))
             }
             .build()
+
+        val openWebDashboardRow = Row.Builder()
+            .setTitle("🌐 Open Web Dashboard")
+            .setOnClickListener {
+                val intent = Intent(carContext, MainActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // Required for starting activity from non-activity context
+                carContext.startActivity(intent)
+            }
+            .build()
         
         val itemList = ItemList.Builder()
             .addItem(assistantTalkRow)
             .addItem(recordAudioRow)
             .addItem(recordingsNavigationRow)
+            .addItem(openWebDashboardRow) // Add the new row
             .build()
 
         return ListTemplate.Builder()

@@ -10,6 +10,8 @@ import android.widget.TextView
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.graphics.Color
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.ComponentActivity
 // import androidx.activity.enableEdgeToEdge
@@ -21,9 +23,11 @@ import com.kitt.android.KittButton
 import com.kitt.android.KittSpectrumView
 import com.kitt.android.voice.VoiceEngine
 import java.util.Locale
+import android.content.Intent // Import for Intent
 
 class MainActivity : ComponentActivity() {
 
+    private lateinit var webView: WebView // Declare WebView
     private lateinit var kittSpectrumView: KittSpectrumView
     private lateinit var transcriptionTextView: TextView
     private lateinit var sttStatusTextView: TextView
@@ -53,6 +57,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // enableEdgeToEdge()
+
+        // Start the WebServerService
+        startService(Intent(this, WebServerService::class.java))
+
+        // Set content view to a WebView
+        webView = WebView(this)
+        setContentView(webView)
+
+        // Configure WebView settings
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true // Enable DOM storage for web apps
+        webView.webViewClient = WebViewClient() // Open links in the same WebView
+
+        // Load the local web server URL
+        webView.loadUrl("http://localhost:8080/index.html")
+
+        // The following code is for the original KITT app functionality.
+        // It will be commented out or integrated as needed for the web-based dashboard.
+        /*
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -114,6 +137,7 @@ class MainActivity : ComponentActivity() {
         
         // Setup switch listeners for talk mode and language selection
         setupSwitchListeners()
+        */
     }
 
     private fun setupSwitchListeners() {
@@ -759,6 +783,8 @@ class MainActivity : ComponentActivity() {
         }
         // Cleanup Bluetooth service
         bluetoothAudioService.cleanup()
+        // Stop the WebServerService
+        stopService(Intent(this, WebServerService::class.java))
         super.onDestroy()
     }
 }
